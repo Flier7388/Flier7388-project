@@ -93,6 +93,15 @@ Future<RoomTimeline> timelineFor({
   roomId: roomId,
 );
 
+/// Stops this timeline's live `timelineMessagesStream`, if any is
+/// running. Call this before discarding a `RoomTimeline` (switching
+/// rooms, logging out) — otherwise, on a quiet room, the Rust-side
+/// stream task never notices the Dart side stopped listening and leaks
+/// the `Timeline` forever. See `matrix_client::RoomTimeline::
+/// subscribe_messages`'s doc comment for the full explanation.
+Future<void> stopTimeline({required RoomTimeline timeline}) =>
+    RustLib.instance.api.crateApiMatrixStopTimeline(timeline: timeline);
+
 /// Returns a snapshot of the timeline's current plain-text messages.
 Future<List<TimelineMessage>> timelineMessages({
   required RoomTimeline timeline,

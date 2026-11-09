@@ -1,10 +1,12 @@
 //! Per-room timeline: reading recent messages and sending new ones.
 
+use async_stream::stream;
 use futures_util::{Stream, StreamExt};
 use matrix_sdk::ruma::RoomId;
 use matrix_sdk::ruma::events::room::message::RoomMessageEventContent;
 use matrix_sdk_ui::timeline::{MsgLikeKind, RoomExt, Timeline, TimelineItemContent};
 use serde::Serialize;
+use tokio_util::sync::CancellationToken;
 
 use crate::client::MatrixClient;
 use crate::error::ClientError;
@@ -25,6 +27,11 @@ pub struct TimelineMessage {
 /// A handle to one room's timeline: read recent messages, send new ones.
 pub struct RoomTimeline {
     timeline: Timeline,
+    /// Lets [`RoomTimeline::stop`] interrupt a live
+    /// [`RoomTimeline::subscribe_messages`] loop. See that method's doc
+    /// comment for why this exists — without it, switching away from a
+    /// quiet room leaks the `Timeline` and its background sync task.
+    cancel: CancellationToken,
 }
 
 impl MatrixClient {
@@ -39,7 +46,10 @@ impl MatrixClient {
             .get_room(&room_id)
             .ok_or_else(|| ClientError::RoomNotFound(room_id.to_string()))?;
         let timeline = room.timeline_builder().build().await?;
-        Ok(RoomTimeline { timeline })
+        Ok(RoomTimeline {
+            timeline,
+            cancel: CancellationToken::new(),
+        })
     }
 }
 
@@ -84,6 +94,17 @@ impl RoomTimeline {
     /// snapshot per update, not an incremental diff, since the Flutter
     /// side has no equivalent of `imbl::Vector` to apply diffs against
     /// and a per-room timeline is small enough that this is cheap.
+    ///
+    /// The returned stream ends as soon as [`RoomTimeline::stop`] is
+    /// called, not just whenever the next diff happens to arrive —
+    /// `.subscribe_filter_map`'s own diff stream only reveals a dropped
+    /// listener on the *next* item it tries to produce, which on a quiet
+    /// room could be never, leaking this `Timeline` (and the background
+    /// sync task it holds) for as long as the process runs (found via a
+    /// real repro: switching rooms repeatedly eventually made every
+    /// further room-open hang). Racing against an explicit
+    /// `CancellationToken` instead means the caller controls the
+    /// lifetime directly.
     pub async fn subscribe_messages(
         &self,
     ) -> (Vec<TimelineMessage>, impl Stream<Item = Vec<TimelineMessage>> + use<'_>) {
@@ -93,11 +114,29 @@ impl RoomTimeline {
             .await;
         let initial = items.iter().cloned().collect();
         let mut state = items;
-        let snapshots = diffs.map(move |diff| {
-            diff.apply(&mut state);
-            state.iter().cloned().collect()
-        });
+        let cancel = self.cancel.clone();
+        let snapshots = stream! {
+            tokio::pin!(diffs);
+            loop {
+                tokio::select! {
+                    _ = cancel.cancelled() => break,
+                    diff = diffs.next() => {
+                        let Some(diff) = diff else { break };
+                        diff.apply(&mut state);
+                        yield state.iter().cloned().collect();
+                    }
+                }
+            }
+        };
         (initial, snapshots)
+    }
+
+    /// Stops any live [`RoomTimeline::subscribe_messages`] stream for
+    /// this handle. Call this before discarding a `RoomTimeline` the
+    /// caller is done with (switching rooms, closing the app) — see that
+    /// method's doc comment for why this matters.
+    pub fn stop(&self) {
+        self.cancel.cancel();
     }
 
     /// Sends a plain-text message to this room.

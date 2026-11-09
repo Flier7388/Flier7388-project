@@ -1990,6 +1990,7 @@ dependencies = [
 name = "matrix-client"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "futures-util",
  "matrix-sdk",
  "matrix-sdk-test",
@@ -1998,6 +1999,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
+ "tokio-util",
  "tracing",
 ]
 

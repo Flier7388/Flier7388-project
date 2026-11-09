@@ -45,6 +45,19 @@ matrix-sdk-ui = { version = "0.19.1", default-features = false }
 # in the dependency graph transitively via `matrix-sdk`, pinned loosely
 # since this crate isn't picky about the exact patch version.
 futures-util = "0.3"
+# `stream!` macro for `RoomTimeline::subscribe_messages`'s cancellable
+# loop — already in the dependency graph transitively (matrix-sdk-ui
+# uses it internally for the same reason).
+async-stream = "0.3"
+# `CancellationToken` so `RoomTimeline::stop()` can actually interrupt
+# `subscribe_messages`'s loop instead of leaving it parked forever on a
+# quiet room — already in the dependency graph transitively via tokio's
+# own ecosystem.
+tokio-util = "0.7"
+# `select!`/`pin!` for the same cancellation race — needs to be a direct
+# dependency (not just transitive via matrix-sdk) for the macros to
+# resolve `tokio::` paths in this crate.
+tokio = { version = "1", default-features = false, features = ["macros"] }
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true

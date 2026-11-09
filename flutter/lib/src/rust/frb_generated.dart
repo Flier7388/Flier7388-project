@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 167041151;
+  int get rustContentHash => 1800780790;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -126,6 +126,8 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiMatrixStartSync({required MatrixClient client});
 
   Future<void> crateApiMatrixStopSync({required MatrixClient client});
+
+  Future<void> crateApiMatrixStopTimeline({required RoomTimeline timeline});
 
   Future<RoomTimeline> crateApiMatrixTimelineFor({
     required MatrixClient client,
@@ -618,6 +620,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "stop_sync", argNames: ["client"]);
 
   @override
+  Future<void> crateApiMatrixStopTimeline({required RoomTimeline timeline}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoomTimeline(
+            timeline,
+            serializer,
+          );
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 14,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiMatrixStopTimelineConstMeta,
+        argValues: [timeline],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiMatrixStopTimelineConstMeta =>
+      const TaskConstMeta(debugName: "stop_timeline", argNames: ["timeline"]);
+
+  @override
   Future<RoomTimeline> crateApiMatrixTimelineFor({
     required MatrixClient client,
     required String roomId,
@@ -634,7 +667,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 15,
             port: port_,
           );
         },
@@ -670,7 +703,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 16,
             port: port_,
           );
         },
@@ -709,7 +742,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 16,
+              funcId: 17,
               port: port_,
             );
           },

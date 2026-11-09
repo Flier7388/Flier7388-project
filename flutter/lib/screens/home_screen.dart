@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _timelineSubscription?.cancel();
+    _stopCurrentTimeline();
     _roomsSubscription?.cancel();
     _spacesSubscription?.cancel();
     _messageController.dispose();
@@ -142,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _selectSpace(SpaceSummary space) async {
     _timelineSubscription?.cancel();
+    _stopCurrentTimeline();
     setState(() {
       _activeTab = null;
       _activeSpace = space;
@@ -171,8 +173,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Stops the Rust-side push loop for whatever `_timeline` currently is,
+  // if any — without this, switching away from a quiet room leaks the
+  // native `Timeline` (and its background sync task) forever, since the
+  // Rust side only notices the Dart subscription was cancelled the next
+  // time it tries to push an update. Cancelling the Dart subscription
+  // alone isn't enough; call this too.
+  void _stopCurrentTimeline() {
+    final timeline = _timeline;
+    if (timeline != null) stopTimeline(timeline: timeline);
+  }
+
   Future<void> _openRoom(RoomSummary room) async {
     await _timelineSubscription?.cancel();
+    _stopCurrentTimeline();
     setState(() {
       _busy = true;
       _error = null;

@@ -292,6 +292,17 @@ pub async fn timeline_for(client: &MatrixClient, room_id: String) -> Result<Room
         .map_err(|error| error.to_string())
 }
 
+/// Stops this timeline's live `timelineMessagesStream`, if any is
+/// running. Call this before discarding a `RoomTimeline` (switching
+/// rooms, logging out) — otherwise, on a quiet room, the Rust-side
+/// stream task never notices the Dart side stopped listening and leaks
+/// the `Timeline` forever. See `matrix_client::RoomTimeline::
+/// subscribe_messages`'s doc comment for the full explanation.
+#[flutter_rust_bridge::frb]
+pub fn stop_timeline(timeline: &RoomTimeline) {
+    timeline.stop();
+}
+
 /// Returns a snapshot of the timeline's current plain-text messages.
 #[flutter_rust_bridge::frb]
 pub async fn timeline_messages(timeline: &RoomTimeline) -> Vec<TimelineMessage> {
@@ -309,7 +320,10 @@ pub async fn timeline_messages(timeline: &RoomTimeline) -> Vec<TimelineMessage> 
 /// error means the listener is gone — stop producing, don't retry).
 #[flutter_rust_bridge::frb]
 pub async fn timeline_messages_stream(timeline: &RoomTimeline, sink: StreamSink<Vec<TimelineMessage>>) {
-    let (initial, mut updates) = timeline.subscribe_messages().await;
+    let (initial, updates) = timeline.subscribe_messages().await;
+    // Same reason as `rooms_stream`'s pin_mut: the underlying
+    // `async_stream::stream!`-built stream is `!Unpin`.
+    futures_util::pin_mut!(updates);
     if sink
         .add(initial.into_iter().map(Into::into).collect())
         .is_err()
