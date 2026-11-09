@@ -1993,6 +1993,7 @@ dependencies = [
  "async-stream",
  "futures-util",
  "matrix-sdk",
+ "matrix-sdk-base",
  "matrix-sdk-test",
  "matrix-sdk-ui",
  "serde",

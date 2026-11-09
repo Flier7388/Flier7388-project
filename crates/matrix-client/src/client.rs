@@ -80,6 +80,13 @@ impl MatrixClient {
         let auth_session = self.client.session()?;
         Session::from_auth_session(self.homeserver_url.clone(), auth_session).ok()
     }
+
+    /// Returns the logged-in account's own display name, or `None` if
+    /// none is set (the UI falls back to the user ID in that case, same
+    /// as everywhere else display names are shown).
+    pub async fn account_display_name(&self) -> Result<Option<String>, ClientError> {
+        Ok(self.client.account().get_display_name().await?)
+    }
 }
 
 /// Test-only helper shared by `room.rs`/`space.rs`'s mock-server tests.
