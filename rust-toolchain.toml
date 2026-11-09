@@ -1,0 +1,16 @@
+# Pinned toolchain for deterministic local and CI builds.
+#
+# 1.96.0 is required because `matrix-rust-sdk`'s own workspace declares
+# `rust-version = "1.96"` (verified against its root Cargo.toml on
+# 2026-11-06) — our floor must match or exceed whatever `matrix-sdk`
+# (a dependency of `crates/matrix-client`) itself requires. It also
+# satisfies the `edition = "2024"` minimum (>= 1.85).
+#
+# Note: this repo's local dev shells get their `rustc`/`cargo` from Nix
+# (see `flake.nix`), not from `rustup` — no `rustup` is installed here.
+# This file is still load-bearing for CI (`dtolnay/rust-toolchain` in
+# `.github/workflows/ci.yml` reads it) and documents the floor the Nix
+# devShell's pinned Rust version must satisfy.
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]

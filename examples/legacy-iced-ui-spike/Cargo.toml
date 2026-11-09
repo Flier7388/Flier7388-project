@@ -1,0 +1,100 @@
+[package]
+name = "app-ui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+# Internal application crate; not intended for crates.io.
+publish = false
+
+[lints]
+workspace = true
+
+# `cdylib` is required so `cargo-apk` can load this crate as the shared
+# library backing the Android `NativeActivity`; `rlib` keeps it usable
+# as a normal library from the desktop `main.rs` binary below.
+[lib]
+name = "app_ui"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "app-ui"
+path = "src/main.rs"
+
+[dependencies]
+# Used by the IME test view to count grapheme clusters (what a user
+# perceives as "one character") separately from Unicode scalar values,
+# which is the only way to verify a ZWJ emoji sequence (e.g. a family
+# emoji made of 4 code points + 3 joiners) was received as one grapheme.
+unicode-segmentation = "1.13.3"
+
+# --- Desktop (default crates.io release; see the Android override below) ---
+[target.'cfg(not(target_os = "android"))'.dependencies]
+iced.workspace = true
+
+# --- Android ---
+#
+# `iced` 0.14.0 on crates.io predates Android support: PR #3245 "Basic
+# iOS and Android support" merged into iced-rs/iced's `master` branch on
+# 2026-02-15, strictly after the 0.14.0 release (2025-12-07), and no
+# later crates.io release has shipped since (verified 2026-11-05,
+# https://github.com/iced-rs/iced/pull/3245). We therefore pin a `git`
+# dependency, scoped to *only* the Android target via this
+# `[target.'cfg(...)']` table, so the desktop/CI build graph stays on
+# the reproducible, pinned crates.io release. `Cargo.lock` still records
+# the exact resolved commit, so the build remains deterministic.
+#
+# The PR's own description documents a known, unresolved limitation:
+# "keyboard does not show up on Android when text input is pressed".
+# This is the specific risk crates/app-ui's Android IME test case exists
+# to confirm or refute on real hardware (see docs/ARCHITECTURE.md).
+#
+# IMPORTANT: the dependency keys below are `iced-android` /
+# `iced-winit-android`, NOT `iced` / `iced_winit`. A dependency name
+# cannot have two different `source`s (registry vs. git) across
+# different `[target.cfg(...)]` tables in the same manifest — Cargo
+# rejects that at `cargo metadata` time with "Dependency 'iced' has
+# different source paths depending on the build target" even though the
+# two cfgs are mutually exclusive (verified locally: this is exactly
+# the error `cargo fmt`/`cargo check` produced before this was split
+# out). `src/lib.rs` resolves this with a target-gated
+# `extern crate iced_android as iced;`, so every other module keeps
+# writing plain `iced::...` paths regardless of platform.
+[target.'cfg(target_os = "android")'.dependencies]
+iced-android = { package = "iced", git = "https://github.com/iced-rs/iced", branch = "master", default-features = false, features = [
+    "wgpu",
+    "tiny-skia",
+    "thread-pool",
+] }
+# Must stay on the same `0.6` line iced_winit itself depends on
+# (verified in winit/Cargo.toml of the PR above): the `AndroidApp` value
+# we hand to `ANDROID_APP` has to be the exact same type iced expects,
+# which only holds if Cargo unifies both to one version.
+android-activity = { version = "0.6", features = ["native-activity"] }
+# `ANDROID_APP` (the static `android_main` must populate before calling
+# `app_ui::run`) lives in `iced_winit`, not in the `iced` facade crate
+# above — `iced`'s own `src/lib.rs` only does a private `use iced_winit`,
+# it never `pub use`s it. So this crate needs its own direct edge to the
+# same git rev. `default-features = false` matches exactly what the
+# `iced` facade crate itself requests of `iced_winit` (verified in its
+# Cargo.toml.orig), so Cargo unifies both edges without pulling in
+# desktop-only features (x11/wayland/clipboard) on Android.
+iced-winit-android = { package = "iced_winit", git = "https://github.com/iced-rs/iced", branch = "master", default-features = false }
+
+# `cargo-apk` (https://crates.io/crates/cargo-apk, verified README at
+# rust-mobile/cargo-apk 2026-11-05) generates the whole AndroidManifest.xml
+# from this table — there is no hand-written manifest in this repo.
+# `package` is a placeholder application ID; change it before any real
+# distribution (it does not need to resolve to an owned domain).
+[package.metadata.android]
+package = "org.matrixclient.uispike"
+build_targets = ["aarch64-linux-android"]
+apk_name = "matrix-client-ui-spike"
+
+[package.metadata.android.sdk]
+# android-activity's NativeActivity backend and iced's wgpu renderer
+# are the floor here; left otherwise at cargo-apk's own defaults.
+min_sdk_version = 26
+
+[package.metadata.android.application]
+label = "Matrix Client — UI Spike"
+debuggable = true

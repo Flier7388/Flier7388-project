@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinny</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>
+  </symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"/>
+  </symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>
+  </symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 13l2.2-7.5A1 1 0 0 1 6.15 5h11.7a1 1 0 0 1 .95.72L21 13"/>
+    <path d="M3 13h5l1.6 2.5h4.8L16 13h5"/>
+    <path d="M3 13v6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-6"/>
+  </symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 17v5"/><path d="M8 11l-2 2h12l-2-2V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2z"/>
+  </symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2C9.6 21 3 14.4 3 6a2 2 0 0 1 2-2z"/>
+  </symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>
+  </symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 6l6 6-6 6"/>
+  </symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 9l6 6 6-6"/>
+  </symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>
+  </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+  </symbol>
+  <symbol id="i-hash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="10" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="14" y2="20"/>
+  </symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 2L15 22l-4-9-9-4z"/>
+  </symbol>
+  <symbol id="i-smile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.3" r="0.9" fill="currentColor" stroke="none"/><circle cx="15" cy="9.3" r="0.9" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 11.5l-9.5 9.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-8.5 8.5a1.5 1.5 0 0 1-2-2l7-7"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 13l4 4L19 7"/>
+  </symbol>
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 15l6-6"/><path d="M10 7l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M14 17l-1 1a4 4 0 0 1-6-6l1-1"/>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5-4.8-4.6 6.6-.9z"/>
+  </symbol>
+</svg>
+
+<div class="app">
+
+  <!-- ===== Рельса (SidebarNav) ===== -->
+  <nav class="rail">
+    <div class="rail__scroll" id="railScroll">
+      <div class="rail-stack">
+        <button class="rail-item is-active" data-target="home" data-tip="Home">
+          <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-home"/></svg></span>
+        </button>
+        <button class="rail-item" data-target="direct" data-tip="Direct Messages">
+          <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-user"/></svg></span>
+        </button>
+      </div>
+
+      <div class="rail-stack" id="spaceStack">
+        <button class="rail-item" data-target="space:hq" data-tip="Matrix HQ">
+          <span class="rail-avatar" style="--mx:var(--mx-uc-7)">MHQ</span>
+        </button>
+        <button class="rail-item" data-target="space:rust" data-tip="Rust Lang">
+          <span class="rail-avatar" style="--mx:var(--mx-uc-4)">RS</span>
+        </button>
+      </div>
+
+      <div class="rail-sep"></div>
+
+      <div class="rail-stack">
+        <button class="rail-item" data-target="explore" data-tip="Explore Community">
+          <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-compass"/></svg></span>
+        </button>
+        <button class="rail-item" id="createTab" data-tip="Add Space">
+          <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-plus"/></svg></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="rail-sep"></div>
+    <div class="rail-stack rail-stack--sticky">
+      <button class="rail-item" id="feedbackTab" data-tip="Leave Feedback">
+        <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-star"/></svg></span>
+      </button>
+      <button class="rail-item" id="searchTab" data-tip="Search">
+        <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-search"/></svg></span>
+      </button>
+      <button class="rail-item" data-target="inbox" data-tip="Inbox">
+        <span class="rail-avatar rail-avatar--outlined"><svg class="icon"><use href="#i-inbox"/></svg></span>
+        <span class="rail-badge">2</span>
+      </button>
+      <button class="rail-item" id="settingsTab" data-tip="User Settings">
+        <span class="rail-avatar rail-avatar--user" style="--mx:var(--mx-uc-2)">Y</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== Лобби / список комнат ===== -->
+  <aside class="lobby">
+    <header class="lobby__header" id="lobbyHeader"></header>
+    <div class="lobby__body" id="lobbyBody"></div>
+  </aside>
+
+  <!-- ===== Комната ===== -->
+  <main class="room">
+    <header class="room__header">
+      <div class="room__avatar" id="roomAvatar"></div>
+      <div class="room__title">
+        <span class="room__name" id="roomName">general</span>
+        <button class="room__topic" id="roomTopic" type="button">Добро пожаловать в главный чат Matrix HQ</button>
+      </div>
+      <div class="room__actions">
+        <button class="icon-btn" id="headerSearchBtn" data-tip="Search">
+          <svg class="icon"><use href="#i-search"/></svg>
+        </button>
+        <button class="icon-btn" id="pinBtn" data-tip="Pinned Messages" style="position:relative">
+          <span class="pin-badge" id="pinBadge" hidden>1</span>
+          <svg class="icon"><use href="#i-pin"/></svg>
+        </button>
+        <button class="icon-btn" id="callBtn" data-tip="Call">
+          <svg class="icon"><use href="#i-phone"/></svg>
+        </button>
+        <button class="icon-btn" id="membersBtn" data-tip="Show Members">
+          <svg class="icon"><use href="#i-user"/></svg>
+        </button>
+        <button class="icon-btn" id="roomMenuBtn" data-tip="More Options">
+          <svg class="icon"><use href="#i-dots"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="timeline" id="timeline"></div>
+
+    <div class="typing-row" id="typingRow" hidden>
+      <span class="typing-dots"><i></i><i></i><i></i></span>
+      <span class="typing-text" id="typingText"></span>
+      <button class="icon-btn icon-btn--pill" id="typingDropBtn" data-tip="Drop Typing Status">
+        <svg class="icon"><use href="#i-x"/></svg>
+      </button>
+    </div>
+
+    <div class="composer">
+      <button class="icon-btn" data-tip="Attach"><svg class="icon"><use href="#i-paperclip"/></svg></button>
+      <div class="composer__box" id="composerBox" contenteditable="true" data-placeholder="Message #general"></div>
+      <button class="icon-btn" id="emojiBtn" data-tip="Emoji"><svg class="icon"><use href="#i-smile"/></svg></button>
+      <button class="icon-btn" id="sendBtn" data-tip="Send"><svg class="icon"><use href="#i-send"/></svg></button>
+    </div>
+  </main>
+
+  <!-- ===== Members Drawer ===== -->
+  <aside class="members" id="membersDrawer" hidden>
+    <header class="members__header">
+      <span>People</span>
+    </header>
+    <div class="members__body">
+      <div class="members-group">Admins — 1</div>
+      <div class="member-row">
+        <span class="avatar avatar--user" style="--mx:var(--mx-uc-2)">Y</span>
+        <span class="member-name">yulia</span>
+      </div>
+
+      <div class="members-group">Members — 4</div>
+      <div class="member-row">
+        <span class="avatar avatar--user" style="--mx:var(--mx-uc-5)">D</span>
+        <span class="member-name">danya</span>
+      </div>
+      <div class="member-row">
+        <span class="avatar avatar--user" style="--mx:var(--mx-uc-3)">A</span>
+        <span class="member-name">alice</span>
+      </div>
+      <div class="member-row">
+        <span class="avatar avatar--user" style="--mx:var(--mx-uc-4)">B</span>
+        <span class="member-name">bob</span>
+      </div>
+      <div class="member-row">
+        <span class="avatar avatar--user" style="--mx:var(--mx-uc-6)">M</span>
+        <span class="member-name">mira</span>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ===== Попауты ===== -->
+<div class="popout" id="createPopout">
+  <button class="popout-card" type="button">
+    <svg class="icon"><use href="#i-plus"/></svg>
+    <span>
+      <b>Create Space</b>
+      <small>Build a space for your community.</small>
+    </span>
+  </button>
+  <button class="popout-card" type="button">
+    <svg class="icon"><use href="#i-link"/></svg>
+    <span>
+      <b>Join with Address</b>
+      <small>Become a part of existing community.</small>
+    </span>
+  </button>
+</div>
+
+<div class="popout" id="roomMenuPopout">
+  <button class="menu-item" id="markReadItem"><svg class="icon"><use href="#i-check"/></svg>Mark as Read</button>
+  <div class="menu-sep"></div>
+  <button class="menu-item"><svg class="icon"><use href="#i-user"/></svg>Invite</button>
+  <button class="menu-item"><svg class="icon"><use href="#i-link"/></svg>Copy Link</button>
+  <div class="menu-sep"></div>
+  <button class="menu-item menu-item--critical"><svg class="icon"><use href="#i-x"/></svg>Leave Room</button>
+</div>
+
+<div class="popout" id="pinPopout">
+  <div class="pin-popout__content" id="pinPopoutContent"></div>
+</div>
+
+<!-- ===== Модалки ===== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="dialog dialog--settings">
+    <nav class="dialog__nav">
+      <button class="dialog__nav-item is-active" data-section="account">Account</button>
+      <button class="dialog__nav-item" data-section="appearance">Appearance</button>
+      <button class="dialog__nav-item" data-section="notifications">Notifications</button>
+      <button class="dialog__nav-item" data-section="voice">Voice &amp; Video</button>
+      <div class="dialog__nav-sep"></div>
+      <button class="dialog__nav-item dialog__nav-item--critical" data-section="logout">Logout</button>
+    </nav>
+    <div class="dialog__content">
+      <button class="icon-btn dialog__close" id="closeSettingsBtn"><svg class="icon"><use href="#i-x"/></svg></button>
+      <div id="settingsSectionContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="searchOverlay">
+  <div class="dialog dialog--search">
+    <div class="dialog__search-box">
+      <svg class="icon"><use href="#i-search"/></svg>
+      <input type="text" placeholder="Search messages across all rooms" autofocus>
+    </div>
+    <p class="dialog__hint">Начните вводить, чтобы искать по всем комнатам.</p>
+  </div>
+</div>
+
+<div class="overlay" id="feedbackOverlay">
+  <div class="dialog dialog--feedback">
+    <button class="icon-btn dialog__close" id="closeFeedbackBtn"><svg class="icon"><use href="#i-x"/></svg></button>
+    <h3>Leave Feedback</h3>
+    <p class="dialog__hint" style="margin:0 0 14px">Оцените приложение и, если хотите, оставьте пару слов.</p>
+
+    <div class="star-rating" id="starRating">
+      <button class="star-btn" data-value="1"><svg class="icon"><use href="#i-star"/></svg></button>
+      <button class="star-btn" data-value="2"><svg class="icon"><use href="#i-star"/></svg></button>
+      <button class="star-btn" data-value="3"><svg class="icon"><use href="#i-star"/></svg></button>
+      <button class="star-btn" data-value="4"><svg class="icon"><use href="#i-star"/></svg></button>
+      <button class="star-btn" data-value="5"><svg class="icon"><use href="#i-star"/></svg></button>
+    </div>
+
+    <textarea class="feedback-text" id="feedbackText" rows="4" placeholder="Расскажите, что понравилось или что можно улучшить..."></textarea>
+
+    <div class="feedback-footer">
+      <span class="feedback-status" id="feedbackStatus"></span>
+      <button class="btn" id="submitFeedbackBtn">Submit</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="topicOverlay">
+  <div class="dialog dialog--topic">
+    <h3 id="topicDialogName"></h3>
+    <p id="topicDialogText"></p>
+    <button class="btn" id="closeTopicBtn">Close</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

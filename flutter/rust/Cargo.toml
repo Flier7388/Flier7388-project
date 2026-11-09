@@ -1,0 +1,22 @@
+[package]
+name = "app_bridge"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+flutter_rust_bridge = "=2.13.0"
+# `StreamExt::map` for `timeline_messages_stream`'s diff-to-snapshot
+# translation before pushing into a `StreamSink`.
+futures-util = "0.3"
+# Path dependency, not a registry version: `matrix-client` lives in the
+# root Cargo workspace (crates/matrix-client) and is NOT a workspace member
+# of this crate — this crate's own manifest and native build integration
+# (Cargokit) are owned by flutter_rust_bridge_codegen's scaffolding, kept
+# unconflicted with the root workspace on purpose. See docs/ARCHITECTURE.md.
+matrix-client = { path = "../../crates/matrix-client" }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

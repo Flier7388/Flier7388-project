@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    name: cargo fmt --check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  check-clippy-test:
+    name: check / clippy / test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo check
+        run: cargo check --workspace --all-targets --locked
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+      - name: cargo test
+        run: cargo test --workspace --locked
+
+  deny:
+    name: cargo deny check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Verified: EmbarkStudios/cargo-deny-action@v2 runs `cargo deny
+      # check` against the repo's own deny.toml; it installs cargo-deny
+      # itself, no separate toolchain step needed.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Verified: rustsec/audit-check@v2 runs `cargo audit` against
+      # Cargo.lock and annotates the PR; it does not fail the build on
+      # "unmaintained"/"unsound" advisories by default, matching the
+      # local `cargo audit` run this workflow mirrors.
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # NOTE: the Android cross-check job that used to live here was tied to
+  # the retired `iced` UI spike (see examples/legacy-iced-ui-spike and
+  # docs/ARCHITECTURE.md). It will come back once the Rust↔Flutter FFI
+  # crate exists and Android is confirmed as a target platform.

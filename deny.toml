@@ -1,0 +1,75 @@
+# Configuration for `cargo deny check` (cargo-deny 0.20.x, verified locally).
+# Run with: cargo deny check
+
+[graph]
+# Revisit once the Rust↔Flutter FFI crate exists and target platforms are
+# confirmed (see docs/ARCHITECTURE.md); left at the two desktop host
+# triples cargo-deny's own default graph resolution needs for now.
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-pc-windows-msvc" },
+]
+
+[advisories]
+# Verified against cargo-deny 0.20.2's own `cargo deny init` template
+# (installed locally 2026-11-05): neither `yanked` nor `unmaintained` is
+# a valid top-level key in this version — both were removed/reworked
+# upstream, so this check now simply runs against the RustSec advisory
+# database with no severity knobs beyond `ignore`.
+#
+# RUSTSEC-2026-0319 is transitive-only, pulled in directly by `matrix-sdk`
+# 0.19.1 itself (matrix-sdk -> anymap2), not a dependency we chose. The
+# advisory states no safe upgrade exists. Re-check on every `matrix-sdk`
+# version bump in `crates/matrix-client/Cargo.toml`.
+ignore = [
+    { id = "RUSTSEC-2026-0319", reason = "transitive via matrix-sdk(0.19.1)->anymap2; unmaintained, no safe upgrade available upstream" },
+]
+
+[licenses]
+# Only allow licenses that are safe to redistribute alongside our own
+# license (GPL-3.0-only, decided 2026-11-09). Reject anything
+# copyleft-incompatible or source-unavailable; everything else must be
+# triaged by a human before being added to this list.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
+    # Pulled in by `xxhash-rust` via `growable-bloom-filter` via
+    # `matrix-sdk-base` (verified via `cargo deny check`'s own dependency
+    # trace, 2026-11-06) — not a dependency we chose directly. OSI-approved,
+    # FSF-listed free software license; permissive, no copyleft obligation.
+    "BSL-1.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+# Our own workspace crates are internal application crates, not
+# published to crates.io (each sets `publish = false`) — even though
+# they now carry `license.workspace = true` (GPL-3.0-only), cargo-deny
+# still treats unpublished crates as worth ignoring here by convention.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+# Verified default from `cargo deny init` (0.20.2): "allow".
+wildcards = "deny"
+deny = [
+    # OpenSSL has repeatedly been the source of build and supply-chain
+    # pain on Windows/Android cross builds; rustls-based stacks only.
+    { crate = "openssl-sys" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+# No git dependencies at present. Add an entry here, with a comment
+# justifying it, the day one becomes unavoidable — see SECURITY.md's
+# supply-chain policy.
+allow-git = []

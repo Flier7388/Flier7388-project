@@ -1,0 +1,57 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/matrix-core",
+    "crates/matrix-storage",
+    "crates/feedback-dto",
+    "crates/matrix-client",
+]
+# `flutter/rust` (the `app_bridge` crate scaffolded by
+# `flutter_rust_bridge_codegen`) is deliberately excluded, not a member:
+# Cargo auto-detects an enclosing workspace by walking up directories, and
+# without this exclusion it errors with "believes it's in a workspace when
+# it's not" (verified locally running `flutter_rust_bridge_codegen generate`
+# on 2026-11-06). Exclusion — not membership — keeps frb's own manifest and
+# Cargokit build integration unconflicted with this workspace, per
+# docs/ARCHITECTURE.md.
+exclude = ["flutter/rust"]
+
+[workspace.package]
+version = "0.1.0"
+license = "GPL-3.0-only"
+edition = "2024"
+# Minimum supported Rust version, inherited by every workspace member.
+# Matches the `rust-version = "1.96"` declared by `matrix-rust-sdk`'s own
+# workspace (verified against its root Cargo.toml on 2026-11-06), the
+# highest MSRV among our pinned dependencies — `matrix-client` depends
+# on `matrix-sdk`, so our floor can't be lower than upstream's.
+rust-version = "1.96"
+
+# Centralized, exact dependency versions. Every crate in the workspace
+# must reference shared dependencies through `{ workspace = true }`
+# instead of repeating a version number, so a single edit here is the
+# only place a bump is ever made.
+[workspace.dependencies]
+# --- Serialization ---
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+
+# --- Errors & diagnostics ---
+thiserror = "2.0.21"
+tracing = "0.1.44"
+
+[workspace.lints.rust]
+# Every publicly reachable item must carry rustdoc. Forces the
+# documentation discipline the project requires before anything ships.
+missing_docs = "deny"
+# `unsafe` is forbidden project-wide by default; crates that must call
+# into FFI (none yet) will need an explicit, reviewed, per-block
+# `#[allow(unsafe_code)]` with a comment justifying it, not a blanket
+# workspace opt-out.
+unsafe_code = "deny"
+# Explicit negative priority: these are lint *groups*, and clippy's
+# `lint_groups_priority` check requires a group to be given a lower
+# priority than individual lints in the same table (even across tables)
+# or it refuses to compile the manifest (verified locally).
+unused = { level = "warn", priority = -1 }
+rust_2024_compatibility = { level = "warn", priority = -1 }
