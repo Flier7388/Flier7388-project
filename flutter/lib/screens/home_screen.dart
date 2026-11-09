@@ -32,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   RailTab? _activeTab = RailTab.home;
   String? _userId;
+  String? _displayName;
 
   List<SpaceSummary> _spaces = [];
   SpaceSummary? _activeSpace;
@@ -73,6 +74,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSession() async {
     final session = await clientSession(client: widget.client);
     if (mounted) setState(() => _userId = session?.userId);
+    try {
+      final name = await accountDisplayName(client: widget.client);
+      if (mounted) setState(() => _displayName = name);
+    } catch (_) {
+      // Not critical — the settings panel just falls back to the user
+      // ID if this fails, same as every other display-name fallback in
+      // the app.
+    }
   }
 
   @override
@@ -336,6 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _SettingsPanel(
                         userId: _userId,
+                        displayName: _displayName,
                         onLogout: widget.onLogout,
                       ),
                     ),
@@ -351,19 +361,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Only the logout action from the mockup's settings dialog is real so
-// far (everything else there — profile edit, appearance, notifications —
-// isn't backed by any matrix-client API yet, so it stays out rather than
-// faking it). Plain content, not styled like the mockup's modal, since
-// that's still deliberately deferred to real UI work.
+// Real profile display (avatar, display name, user ID) plus the logout
+// action from the mockup's settings dialog. Everything else the mockup
+// has (profile edit, appearance, notifications) isn't backed by any
+// matrix-client API yet, so it stays out rather than faking it. Plain
+// content, not styled like the mockup's modal — that's still
+// deliberately deferred to real UI work.
 class _SettingsPanel extends StatelessWidget {
-  const _SettingsPanel({required this.userId, required this.onLogout});
+  const _SettingsPanel({
+    required this.userId,
+    required this.displayName,
+    required this.onLogout,
+  });
 
   final String? userId;
+  final String? displayName;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
+    final userId = this.userId;
+    final name = displayName ?? userId?.replaceFirst('@', '') ?? '?';
     return ColoredBox(
       color: MatrixColors.surfaceContainer,
       child: Center(
@@ -371,10 +389,32 @@ class _SettingsPanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (userId != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: colorForMxid(userId),
                 child: Text(
-                  userId!,
+                  initials(name),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: MatrixColors.surfaceContainer,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: MatrixColors.onContainer,
+              ),
+            ),
+            if (userId != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 20),
+                child: Text(
+                  userId,
                   style: const TextStyle(color: MatrixColors.onContainerDim),
                 ),
               ),

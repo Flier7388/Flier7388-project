@@ -39,6 +39,11 @@ Future<MatrixClient> restoreSession({
 Future<Session?> clientSession({required MatrixClient client}) =>
     RustLib.instance.api.crateApiMatrixClientSession(client: client);
 
+/// Returns the logged-in account's own display name, or `None` if none
+/// is set.
+Future<String?> accountDisplayName({required MatrixClient client}) =>
+    RustLib.instance.api.crateApiMatrixAccountDisplayName(client: client);
+
 /// Starts the sync service.
 Future<void> startSync({required MatrixClient client}) =>
     RustLib.instance.api.crateApiMatrixStartSync(client: client);

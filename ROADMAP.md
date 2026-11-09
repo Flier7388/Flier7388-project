@@ -74,10 +74,8 @@ backend-logic demo.
 - [x] Custom dark theme, no Material blue defaults.
 - [x] Real joined-room and joined-space navigation, live-updating.
 - [x] Member list drawer for an open room.
-- [ ] Settings dialog: at minimum profile display (avatar, display
+- [x] Settings dialog: at minimum profile display (avatar, display
   name, user ID) alongside the existing logout button.
-  **Acceptance:** opening Settings shows the logged-in user's real
-  profile data, not just the logout button.
 - [ ] Direct Messages tab: list of real DM rooms (1:1 rooms, not
   flagged as spaces).
   **Acceptance:** a DM started from another client shows up in this

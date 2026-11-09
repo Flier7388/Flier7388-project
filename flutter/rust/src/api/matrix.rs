@@ -182,6 +182,16 @@ pub fn client_session(client: &MatrixClient) -> Option<Session> {
     client.session().map(Into::into)
 }
 
+/// Returns the logged-in account's own display name, or `None` if none
+/// is set.
+#[flutter_rust_bridge::frb]
+pub async fn account_display_name(client: &MatrixClient) -> Result<Option<String>, String> {
+    client
+        .account_display_name()
+        .await
+        .map_err(|error| error.to_string())
+}
+
 /// Starts the sync service.
 #[flutter_rust_bridge::frb]
 pub async fn start_sync(client: &MatrixClient) {
