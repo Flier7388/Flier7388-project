@@ -22,13 +22,12 @@ dev_dependencies:
 flutter:
   plugin:
     platforms:
-      android:
-        ffiPlugin: true
-      ios:
-        ffiPlugin: true
+      # Android/iOS/macOS scaffolding removed 2026-11-09: this project's
+      # own v1 scope is desktop-only (Linux + Windows), and the app
+      # itself was never scaffolded for those platforms either — keeping
+      # this plugin manifest in sync with what actually has an
+      # implementation folder below.
       linux:
-        ffiPlugin: true
-      macos:
         ffiPlugin: true
       windows:
         ffiPlugin: true

@@ -1,0 +1,10 @@
+# Keep GitHub's language stats honest: this project's own code is
+# Rust + Dart. Everything below is either vendored build tooling
+# (flutter_rust_bridge's Cargokit) or boilerplate Flutter generates
+# per-platform and expects to be committed, not authored here.
+
+flutter/rust_builder/cargokit/** linguist-vendored
+flutter/linux/flutter/** linguist-generated
+flutter/windows/flutter/** linguist-generated
+flutter/lib/src/rust/** linguist-generated
+flutter/rust/src/frb_generated.rs linguist-generated
