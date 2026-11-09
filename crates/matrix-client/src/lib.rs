@@ -16,6 +16,7 @@
 
 mod client;
 mod error;
+mod member;
 mod room;
 mod session;
 mod space;
@@ -24,6 +25,7 @@ mod timeline;
 
 pub use client::MatrixClient;
 pub use error::ClientError;
+pub use member::RoomMemberSummary;
 pub use room::RoomSummary;
 pub use session::Session;
 pub use space::SpaceSummary;

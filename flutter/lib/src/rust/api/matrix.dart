@@ -6,7 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`, `from`, `from`, `try_from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `from`, `from`, `from`, `from`, `from`, `try_from`
 
 /// Logs in with a username and password against `homeserver_url`.
 /// `store_path` is a directory the app controls (e.g. from
@@ -75,6 +75,15 @@ Future<List<RoomSummary>> spaceRooms({
   spaceId: spaceId,
 );
 
+/// Returns the given room's joined members.
+Future<List<RoomMemberSummary>> roomMembers({
+  required MatrixClient client,
+  required String roomId,
+}) => RustLib.instance.api.crateApiMatrixRoomMembers(
+  client: client,
+  roomId: roomId,
+);
+
 /// Builds a timeline handle for the given room ID.
 Future<RoomTimeline> timelineFor({
   required MatrixClient client,
@@ -108,6 +117,37 @@ abstract class MatrixClient implements RustOpaqueInterface {}
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<RoomTimeline>>
 abstract class RoomTimeline implements RustOpaqueInterface {}
+
+/// A joined room member's identity. Mirrors `matrix_client::RoomMemberSummary`.
+class RoomMemberSummary {
+  /// The member's fully-qualified user ID.
+  final String userId;
+
+  /// The member's display name (falls back to their user ID's
+  /// localpart if none is set).
+  final String displayName;
+
+  /// `true` for moderators/administrators/creators (power level 50+).
+  final bool isAdmin;
+
+  const RoomMemberSummary({
+    required this.userId,
+    required this.displayName,
+    required this.isAdmin,
+  });
+
+  @override
+  int get hashCode => userId.hashCode ^ displayName.hashCode ^ isAdmin.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RoomMemberSummary &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          displayName == other.displayName &&
+          isAdmin == other.isAdmin;
+}
 
 /// A joined room's identity and display name. Mirrors
 /// `matrix_client::RoomSummary` (already plain strings — duplicated here

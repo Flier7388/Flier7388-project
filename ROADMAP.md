@@ -73,10 +73,7 @@ backend-logic demo.
 - [x] 3-pane desktop layout (sidebar rail / room list / room view).
 - [x] Custom dark theme, no Material blue defaults.
 - [x] Real joined-room and joined-space navigation, live-updating.
-- [ ] Member list drawer for an open room.
-  **Acceptance:** opening a room shows its joined members (name,
-  avatar-initial) in a side drawer; matches `design/`'s member-drawer
-  mockup.
+- [x] Member list drawer for an open room.
 - [ ] Settings dialog: at minimum profile display (avatar, display
   name, user ID) alongside the existing logout button.
   **Acceptance:** opening Settings shows the logged-in user's real

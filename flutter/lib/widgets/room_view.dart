@@ -6,7 +6,8 @@ import 'package:matrix_client/widgets/timeline_message.dart';
 
 // The open room: header, grouped timeline, composer. No topic/action
 // icons (design/style.css's room__topic/room__actions) — those are all
-// for features not built yet (search, pins, calls, members).
+// for features not built yet (search, pins, calls). The members toggle
+// is built (see MemberDrawer).
 class RoomView extends StatelessWidget {
   const RoomView({
     super.key,
@@ -15,6 +16,8 @@ class RoomView extends StatelessWidget {
     required this.messageController,
     required this.onSend,
     required this.busy,
+    required this.membersOpen,
+    required this.onToggleMembers,
   });
 
   final RoomSummary? room;
@@ -22,6 +25,8 @@ class RoomView extends StatelessWidget {
   final TextEditingController messageController;
   final VoidCallback onSend;
   final bool busy;
+  final bool membersOpen;
+  final VoidCallback onToggleMembers;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +49,11 @@ class RoomView extends StatelessWidget {
         color: MatrixColors.surfaceContainer,
         child: Column(
           children: [
-            _Header(room: room!),
+            _Header(
+              room: room!,
+              membersOpen: membersOpen,
+              onToggleMembers: onToggleMembers,
+            ),
             const Divider(height: 1, color: MatrixColors.bgContainerLine),
             Expanded(child: _Timeline(messages: messages)),
             _Composer(
@@ -59,9 +68,15 @@ class RoomView extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.room});
+  const _Header({
+    required this.room,
+    required this.membersOpen,
+    required this.onToggleMembers,
+  });
 
   final RoomSummary room;
+  final bool membersOpen;
+  final VoidCallback onToggleMembers;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +111,15 @@ class _Header extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          IconButton(
+            tooltip: 'Show Members',
+            color: membersOpen
+                ? MatrixColors.primaryMain
+                : MatrixColors.onContainerDim,
+            onPressed: onToggleMembers,
+            icon: const Icon(Icons.people_outline),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
     );

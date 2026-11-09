@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:matrix_client/src/rust/api/matrix.dart';
 import 'package:matrix_client/theme.dart';
+import 'package:matrix_client/widgets/member_drawer.dart';
 import 'package:matrix_client/widgets/rail_nav.dart';
 import 'package:matrix_client/widgets/room_list.dart';
 import 'package:matrix_client/widgets/room_view.dart';
@@ -37,6 +38,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<RoomSummary> _spaceRooms = [];
   StreamSubscription<List<RoomSummary>>? _roomsSubscription;
   StreamSubscription<List<SpaceSummary>>? _spacesSubscription;
+
+  bool _membersOpen = false;
+  bool _membersBusy = false;
+  List<RoomMemberSummary> _members = [];
 
   @override
   void initState() {
@@ -109,6 +114,32 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _toggleMembers() {
+    if (_membersOpen) {
+      setState(() => _membersOpen = false);
+      return;
+    }
+    setState(() => _membersOpen = true);
+    _loadMembers();
+  }
+
+  Future<void> _loadMembers() async {
+    final room = _selectedRoom;
+    if (room == null) return;
+    setState(() => _membersBusy = true);
+    try {
+      final memberList = await roomMembers(
+        client: widget.client,
+        roomId: room.roomId,
+      );
+      if (mounted) setState(() => _members = memberList);
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _membersBusy = false);
+    }
+  }
+
   Future<void> _selectSpace(SpaceSummary space) async {
     _timelineSubscription?.cancel();
     setState(() {
@@ -117,6 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedRoom = null;
       _timeline = null;
       _messages = [];
+      _membersOpen = false;
+      _members = [];
     });
     await _refreshSpaceRooms();
   }
@@ -153,7 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedRoom = room;
         _timeline = timeline;
         _messages = [];
+        _members = [];
       });
+      // Members panel stays open across a room switch (matches how the
+      // design mockup treats it) — just refetch for the newly-opened
+      // room instead of closing it.
+      if (_membersOpen) unawaited(_loadMembers());
       // Real push updates via matrix-client's `subscribe_messages`
       // (Timeline::subscribe_filter_map's VectorDiff stream, re-flattened
       // to a plain snapshot per update) — the first emission is the
@@ -242,7 +280,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       messageController: _messageController,
                       onSend: _sendMessage,
                       busy: _busy,
+                      membersOpen: _membersOpen,
+                      onToggleMembers: _toggleMembers,
                     ),
+                    if (_membersOpen && _selectedRoom != null) ...[
+                      const VerticalDivider(
+                        width: 1,
+                        color: MatrixColors.bgContainerLine,
+                      ),
+                      MemberDrawer(members: _members, busy: _membersBusy),
+                    ],
                   ] else if (_activeTab == RailTab.home) ...[
                     RoomList(
                       rooms: _rooms,
@@ -261,7 +308,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       messageController: _messageController,
                       onSend: _sendMessage,
                       busy: _busy,
+                      membersOpen: _membersOpen,
+                      onToggleMembers: _toggleMembers,
                     ),
+                    if (_membersOpen && _selectedRoom != null) ...[
+                      const VerticalDivider(
+                        width: 1,
+                        color: MatrixColors.bgContainerLine,
+                      ),
+                      MemberDrawer(members: _members, busy: _membersBusy),
+                    ],
                   ] else if (_activeTab == RailTab.settings) ...[
                     Expanded(
                       child: _SettingsPanel(

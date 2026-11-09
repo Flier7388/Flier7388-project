@@ -87,6 +87,27 @@ impl From<matrix_client::RoomSummary> for RoomSummary {
     }
 }
 
+/// A joined room member's identity. Mirrors `matrix_client::RoomMemberSummary`.
+pub struct RoomMemberSummary {
+    /// The member's fully-qualified user ID.
+    pub user_id: String,
+    /// The member's display name (falls back to their user ID's
+    /// localpart if none is set).
+    pub display_name: String,
+    /// `true` for moderators/administrators/creators (power level 50+).
+    pub is_admin: bool,
+}
+
+impl From<matrix_client::RoomMemberSummary> for RoomMemberSummary {
+    fn from(member: matrix_client::RoomMemberSummary) -> Self {
+        Self {
+            user_id: member.user_id,
+            display_name: member.display_name,
+            is_admin: member.is_admin,
+        }
+    }
+}
+
 /// A joined space's identity and display name. Mirrors
 /// `matrix_client::SpaceSummary`.
 pub struct SpaceSummary {
@@ -246,6 +267,19 @@ pub async fn space_rooms(
         .space_rooms(&space_id)
         .await
         .map(|rooms| rooms.into_iter().map(Into::into).collect())
+        .map_err(|error| error.to_string())
+}
+
+/// Returns the given room's joined members.
+#[flutter_rust_bridge::frb]
+pub async fn room_members(
+    client: &MatrixClient,
+    room_id: String,
+) -> Result<Vec<RoomMemberSummary>, String> {
+    client
+        .room_members(&room_id)
+        .await
+        .map(|members| members.into_iter().map(Into::into).collect())
         .map_err(|error| error.to_string())
 }
 
