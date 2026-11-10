@@ -62,6 +62,15 @@ Future<List<RoomSummary>> rooms({required MatrixClient client}) =>
 Stream<List<RoomSummary>> roomsStream({required MatrixClient client}) =>
     RustLib.instance.api.crateApiMatrixRoomsStream(client: client);
 
+/// Returns a snapshot of all currently-joined direct-message rooms (1:1
+/// rooms flagged via `m.direct` account data).
+Future<List<RoomSummary>> directRooms({required MatrixClient client}) =>
+    RustLib.instance.api.crateApiMatrixDirectRooms(client: client);
+
+/// Streams the joined DM room list, same push pattern as [`rooms_stream`].
+Stream<List<RoomSummary>> directRoomsStream({required MatrixClient client}) =>
+    RustLib.instance.api.crateApiMatrixDirectRoomsStream(client: client);
+
 /// Returns a snapshot of the user's top-level joined spaces.
 Future<List<SpaceSummary>> spaces({required MatrixClient client}) =>
     RustLib.instance.api.crateApiMatrixSpaces(client: client);

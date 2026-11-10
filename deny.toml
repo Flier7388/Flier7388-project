@@ -23,6 +23,22 @@ targets = [
 # version bump in `crates/matrix-client/Cargo.toml`.
 ignore = [
     { id = "RUSTSEC-2026-0319", reason = "transitive via matrix-sdk(0.19.1)->anymap2; unmaintained, no safe upgrade available upstream" },
+    # RUSTSEC-2026-0459 / CVE-2026-119375: uninitialized page-cache memory
+    # disclosure when opening a DB + sibling -wal pair with mismatched page
+    # sizes, affecting SQLite bundled by `libsqlite3-sys` <0.39.0. Pulled in
+    # via `matrix-sdk/bundled-sqlite` -> `matrix-sdk-sqlite` 0.19.1, which
+    # hard-pins `rusqlite = "0.40.2"` (bundles libsqlite3-sys 0.38.2) — no
+    # upgrade possible without matrix-sdk-sqlite itself bumping past
+    # rusqlite 0.40.x upstream. `bundled-sqlite` (vs. the plain `sqlite`
+    # feature, which links the system lib via pkg-config) is required for
+    # Windows builds: there's no system sqlite3.lib to find there, verified
+    # via a real `flutter build windows` LNK1181 failure, 2026-11-10.
+    # Exposure here is low: the only sqlite files this app ever opens are
+    # its own local matrix-sdk store at a fixed, user-owned path — never an
+    # externally supplied/untrusted DB+WAL pair, which is what the
+    # advisory's attack vector requires. Re-check on every `matrix-sdk`
+    # version bump in `crates/matrix-client/Cargo.toml`.
+    { id = "RUSTSEC-2026-0459", reason = "transitive via matrix-sdk(0.19.1)/bundled-sqlite->matrix-sdk-sqlite->rusqlite 0.40.2 (hard-pinned upstream, no safe upgrade); exposure limited to this app's own local, non-attacker-supplied sqlite store" },
 ]
 
 [licenses]

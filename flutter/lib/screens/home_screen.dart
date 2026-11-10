@@ -40,6 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<List<RoomSummary>>? _roomsSubscription;
   StreamSubscription<List<SpaceSummary>>? _spacesSubscription;
 
+  List<RoomSummary> _directRooms = [];
+  StreamSubscription<List<RoomSummary>>? _directRoomsSubscription;
+
   bool _membersOpen = false;
   bool _membersBusy = false;
   List<RoomMemberSummary> _members = [];
@@ -69,6 +72,14 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) setState(() => _error = e.toString());
       },
     );
+    _directRoomsSubscription = directRoomsStream(client: widget.client).listen(
+      (roomList) {
+        if (mounted) setState(() => _directRooms = roomList);
+      },
+      onError: (e) {
+        if (mounted) setState(() => _error = e.toString());
+      },
+    );
   }
 
   Future<void> _loadSession() async {
@@ -90,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _stopCurrentTimeline();
     _roomsSubscription?.cancel();
     _spacesSubscription?.cancel();
+    _directRoomsSubscription?.cancel();
     _messageController.dispose();
     super.dispose();
   }
@@ -112,6 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final roomList = await rooms(client: widget.client);
       setState(() => _rooms = roomList);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    }
+  }
+
+  // Manual-refresh button on the Direct Messages room list — same
+  // one-shot re-fetch pattern as `_refreshRooms`, on top of the live
+  // `_directRoomsSubscription`.
+  Future<void> _refreshDirectRooms() async {
+    try {
+      final roomList = await directRooms(client: widget.client);
+      setState(() => _directRooms = roomList);
     } catch (e) {
       setState(() => _error = e.toString());
     }
@@ -341,6 +365,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       MemberDrawer(members: _members, busy: _membersBusy),
                     ],
+                  ] else if (_activeTab == RailTab.direct) ...[
+                    RoomList(
+                      title: 'Direct Messages',
+                      rooms: _directRooms,
+                      selectedRoomId: _selectedRoom?.roomId,
+                      onSelect: _openRoom,
+                      onRefresh: _refreshDirectRooms,
+                      busy: _busy,
+                    ),
+                    const VerticalDivider(
+                      width: 1,
+                      color: MatrixColors.bgContainerLine,
+                    ),
+                    RoomView(
+                      room: _selectedRoom,
+                      messages: _messages,
+                      messageController: _messageController,
+                      onSend: _sendMessage,
+                      busy: _busy,
+                      membersOpen: _membersOpen,
+                      onToggleMembers: _toggleMembers,
+                    ),
+                    if (_membersOpen && _selectedRoom != null) ...[
+                      const VerticalDivider(
+                        width: 1,
+                        color: MatrixColors.bgContainerLine,
+                      ),
+                      MemberDrawer(members: _members, busy: _membersBusy),
+                    ],
                   ] else if (_activeTab == RailTab.settings) ...[
                     Expanded(
                       child: _SettingsPanel(
@@ -427,9 +480,8 @@ class _SettingsPanel extends StatelessWidget {
 }
 
 // design/style.css's `.lobby-placeholder` tone — used for rail tabs that
-// don't have a real screen behind them yet (no spaces/DM/explore/inbox/
-// search API on the Rust side, settings/feedback still just mockup
-// dialogs).
+// don't have a real screen behind them yet (no explore/inbox/search API
+// on the Rust side, settings/feedback still just mockup dialogs).
 class _ComingSoon extends StatelessWidget {
   const _ComingSoon();
 

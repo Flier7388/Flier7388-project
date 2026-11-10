@@ -60,7 +60,16 @@ class _MatrixClientAppState extends State<MatrixClientApp> {
       _client = null;
       _stage = _Stage.loggedOut;
     });
-    if (client != null) await stopSync(client: client);
+    if (client != null) {
+      await stopSync(client: client);
+      // Deterministically drops the underlying Rust `MatrixClient` (and
+      // its `matrix-sdk-sqlite` connections) now, instead of whenever
+      // Dart's GC gets around to it — `clearSession()` is about to
+      // delete the store directory on disk, and on Windows a still-open
+      // SQLite handle makes that delete fail with a sharing violation
+      // (not an issue on Linux, which allows unlinking open files).
+      client.dispose();
+    }
     await clearSession();
   }
 

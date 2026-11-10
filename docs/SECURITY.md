@@ -50,16 +50,31 @@ to change for a real reason, that change must come with a comment in
 `deny.toml` explaining exactly why, the same way the two exceptions below
 are documented.
 
-Adding `matrix-sdk` 0.19.1 (`crates/matrix-client`) introduced two
+Adding `matrix-sdk` 0.19.1 (`crates/matrix-client`) introduced three
 transitive, upstream-only exceptions, verified via `cargo deny check`'s own
-dependency trace on 2026-11-06 — neither is a dependency we chose:
+dependency trace — none is a dependency we chose:
 - **License**: `xxhash-rust` (BSL-1.0, via `growable-bloom-filter` via
-  `matrix-sdk-base`) — added to `licenses.allow`.
+  `matrix-sdk-base`) — added to `licenses.allow` (2026-11-06).
 - **Advisory**: `RUSTSEC-2026-0319` (`anymap2` unmaintained, pulled
   directly by `matrix-sdk`, no safe upgrade available) — added to
-  `advisories.ignore`.
+  `advisories.ignore` (2026-11-06).
+- **Advisory**: `RUSTSEC-2026-0459` / CVE-2026-119375 (uninitialized
+  page-cache memory disclosure in SQLite versions bundled by
+  `libsqlite3-sys` <0.39.0, requiring a DB + sibling `-wal` pair with
+  mismatched page sizes). Pulled in by switching `matrix-sdk`'s sqlite
+  feature from `sqlite` (links the system lib) to `bundled-sqlite`
+  (compiles SQLite from source) — needed because Windows has no system
+  `sqlite3.lib` to link against (`flutter build windows` failed with
+  `LNK1181` otherwise). `matrix-sdk-sqlite` 0.19.1 hard-pins
+  `rusqlite = "0.40.2"`, which bundles the vulnerable `libsqlite3-sys`
+  0.38.2; no upgrade is possible without an upstream bump. Added to
+  `advisories.ignore` (2026-11-10) — the exposure is low for this app
+  specifically, since the only sqlite files it ever opens are its own
+  local `matrix-sdk-sqlite` store at a fixed, user-owned path, never an
+  externally supplied/untrusted DB+WAL pair (the advisory's actual
+  attack vector).
 
-Re-verify both on every `matrix-sdk` version bump.
+Re-verify all three on every `matrix-sdk` version bump.
 
 ## Matrix-sdk / server compatibility (forward-looking, not yet integrated)
 See `docs/ARCHITECTURE.md`'s matching section — the compatibility checks

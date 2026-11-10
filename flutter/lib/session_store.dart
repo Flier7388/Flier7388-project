@@ -57,8 +57,19 @@ Future<Session?> loadSession() async {
 
 /// Deletes the saved session, if any — called on logout, or after a
 /// restore attempt fails (an expired/revoked token shouldn't be retried
-/// forever on every launch).
+/// forever on every launch). Also wipes the `matrix-sdk-sqlite` store
+/// directory: it's keyed to the account/device that created it, and
+/// `sqliteStorePath()` always returns the same fixed path regardless of
+/// which account logs in next — leaving it behind makes every
+/// subsequent login (same account *or* a different one) fail with
+/// matrix-sdk's own "account in the store doesn't match the account in
+/// the constructor" guard, since the store refuses to open under a
+/// mismatched account/device (verified live 2026-11-10: logging out
+/// then back in, or logging in as a different user entirely, both hit
+/// this).
 Future<void> clearSession() async {
   final file = await _sessionFile();
   if (await file.exists()) await file.delete();
+  final store = Directory(await sqliteStorePath());
+  if (await store.exists()) await store.delete(recursive: true);
 }

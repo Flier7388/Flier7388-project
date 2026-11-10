@@ -31,8 +31,8 @@ are actually met — avoid working on several milestones in parallel.
   reference (`design/`), not Material defaults.
 - Real 3-pane desktop layout: sidebar rail (spaces + nav) / room list /
   room view — not a placeholder.
-- Only the Home tab and a selected space have real screens behind them.
-  Direct Messages, Explore, Search, Inbox, and most of Settings are
+- Home, Direct Messages, and a selected space all have real screens
+  behind them. Explore, Search, Inbox, and most of Settings are still
   explicit "Not implemented yet" placeholders — intentional, not faked
   data, but also not built.
 - Logout works.
@@ -53,11 +53,50 @@ are actually met — avoid working on several milestones in parallel.
 
 **Suggested current build tag: `0.1.0-alpha`.** The defining deliverable
 of the 0.1.0 milestone below (real 3-column desktop UI, no blue
-defaults, wired to live data) is substantially met; the milestone's
-remaining items (member drawer, settings/search dialogs, DM screen) are
-listed as open tasks below rather than claimed as done.
+defaults, wired to live data) is substantially met; the milestone's one
+remaining item (a real Windows build) is listed as an open task below
+rather than claimed as done.
 
 ---
+
+## Known issues (not yet fixed)
+
+- **Login screen requires a full URL scheme.** Typing just a bare
+  domain (e.g. `matrix.org`) into the homeserver field fails to find
+  the server — only `https://matrix.org` works. Found 2026-11-10
+  during the first real Windows run. Root cause: `client.rs`'s
+  `build_client` calls `matrix_sdk::ClientBuilder::homeserver_url`,
+  which takes the string literally with no scheme-guessing or
+  `.well-known` discovery. The fix matrix-sdk already provides:
+  `ClientBuilder::server_name_or_homeserver_url` accepts either a bare
+  server name *or* a full URL, assumes HTTPS, and does
+  `.well-known/matrix/client` discovery for the bare-name case —
+  exactly what most Matrix clients (Element included) let you type.
+  Swap `.homeserver_url(homeserver_url)` for
+  `.server_name_or_homeserver_url(homeserver_url)` in `build_client`
+  (`crates/matrix-client/src/client.rs`) to fix it.
+- **Switching rooms gets stuck after the first switch.** Found
+  2026-11-10 during real Windows testing: pick a room, then pick a
+  different one (in Home or a space) — the view doesn't change. Works
+  once right after switching tabs/spaces, then sticks again. Same root
+  class as 2026-11-09's timeline-stream leak, not fully closed by that
+  fix: `home_screen.dart`'s `_openRoom`/`_selectSpace` replace `_timeline`
+  (a `RoomTimeline` FRB opaque object) without ever calling `.dispose()`
+  on the old one — only `stopTimeline()` runs, which cancels *our*
+  forwarding-stream wrapper, not the underlying native
+  `matrix-sdk-ui::Timeline` and its own background task. The old
+  `Timeline` leaks until Dart's GC/FRB finalizer eventually gets to it —
+  not deterministic, not immediate. Needs the same `.dispose()` fix
+  already applied to `MatrixClient` on logout (`main.dart`'s `_logout`,
+  2026-11-10) — call `_timeline?.dispose()` everywhere `_timeline` gets
+  replaced or discarded (`_openRoom`, `_selectSpace`, `dispose()`).
+- **Only the last message shows, not full room history.** Found
+  2026-11-10 — confirmed even in a quiet admin/bot room. Root cause:
+  `timeline.rs`'s `timeline_for` never calls `Timeline::
+  paginate_backwards` — the timeline only shows whatever's already in
+  the local event cache from live sync, no backfill from the server on
+  open. Fix: call `paginate_backwards` (a reasonable default batch, e.g.
+  20 events) when building the timeline, or behind a "load more" action.
 
 ## 0.0.1-alpha — done
 
@@ -76,14 +115,24 @@ backend-logic demo.
 - [x] Member list drawer for an open room.
 - [x] Settings dialog: at minimum profile display (avatar, display
   name, user ID) alongside the existing logout button.
-- [ ] Direct Messages tab: list of real DM rooms (1:1 rooms, not
+- [x] Direct Messages tab: list of real DM rooms (1:1 rooms, not
   flagged as spaces).
   **Acceptance:** a DM started from another client shows up in this
-  tab with the other user's name.
+  tab with the other user's name. Implemented and unit-tested against
+  `Room::is_dm()` (the `m.direct` account-data flag, not just a
+  2-member heuristic); the live account used to runtime-check this had
+  no DM-flagged rooms at verification time, so the tab's empty state
+  was confirmed but the "other user's name" part of this acceptance
+  criterion still wants a real click-through once a DM exists.
 - [ ] Windows desktop build actually attempted and confirmed working.
   **Acceptance:** `flutter build windows` succeeds and the built `.exe`
   launches, logs in, and sends a message on a real Windows machine (or
-  CI runner).
+  CI runner). A `flutter-windows-build` job now exists in
+  `.github/workflows/ci.yml` (Windows runner, `flutter build windows`
+  via Cargokit) — added 2026-11-09, not yet actually run (this working
+  copy isn't a git repo here, so it can't push to trigger Actions).
+  Still open until a CI run or a real machine confirms the build
+  succeeds and the `.exe` launches.
 
 ## 0.2.0-alpha — real chat features
 

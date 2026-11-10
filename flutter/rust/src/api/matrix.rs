@@ -240,6 +240,38 @@ pub async fn rooms_stream(client: &MatrixClient, sink: StreamSink<Vec<RoomSummar
     }
 }
 
+/// Returns a snapshot of all currently-joined direct-message rooms (1:1
+/// rooms flagged via `m.direct` account data).
+#[flutter_rust_bridge::frb]
+pub async fn direct_rooms(client: &MatrixClient) -> Result<Vec<RoomSummary>, String> {
+    client
+        .direct_rooms()
+        .await
+        .map(|rooms| rooms.into_iter().map(Into::into).collect())
+        .map_err(|error| error.to_string())
+}
+
+/// Streams the joined DM room list, same push pattern as [`rooms_stream`].
+#[flutter_rust_bridge::frb]
+pub async fn direct_rooms_stream(client: &MatrixClient, sink: StreamSink<Vec<RoomSummary>>) {
+    let (initial, updates) = client.subscribe_direct_rooms().await;
+    futures_util::pin_mut!(updates);
+    if sink
+        .add(initial.into_iter().map(Into::into).collect())
+        .is_err()
+    {
+        return;
+    }
+    while let Some(snapshot) = updates.next().await {
+        if sink
+            .add(snapshot.into_iter().map(Into::into).collect())
+            .is_err()
+        {
+            return;
+        }
+    }
+}
+
 /// Returns a snapshot of the user's top-level joined spaces.
 #[flutter_rust_bridge::frb]
 pub async fn spaces(client: &MatrixClient) -> Vec<SpaceSummary> {

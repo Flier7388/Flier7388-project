@@ -75,6 +75,45 @@ impl MatrixClient {
         });
         (initial, snapshots)
     }
+
+    /// Returns a snapshot of all currently-joined direct-message rooms:
+    /// 1:1 rooms flagged via the `m.direct` account data (`Room::is_dm`),
+    /// not just any 2-member room. This is the Direct Messages tab's data
+    /// source, as opposed to [`MatrixClient::rooms`]'s full joined list
+    /// (which includes DMs alongside everything else).
+    pub async fn direct_rooms(&self) -> Result<Vec<RoomSummary>, ClientError> {
+        let mut summaries = Vec::new();
+        for room in self.client.rooms() {
+            if room.state() != RoomState::Joined || !room.is_dm() {
+                continue;
+            }
+            let display_name = room.display_name().await?.to_string();
+            summaries.push(RoomSummary {
+                room_id: room.room_id().to_string(),
+                display_name,
+            });
+        }
+        Ok(summaries)
+    }
+
+    /// The DM-filtered counterpart to [`MatrixClient::subscribe_rooms`] —
+    /// same live-updating snapshot stream, restricted to `Room::is_dm`
+    /// rooms.
+    pub async fn subscribe_direct_rooms(
+        &self,
+    ) -> (Vec<RoomSummary>, impl Stream<Item = Vec<RoomSummary>> + use<'_>) {
+        let (items, diffs) = self.client.rooms_stream();
+        let initial = summarize_direct_rooms(items.clone()).await;
+        let mut state = items;
+        let snapshots = diffs.then(move |batch| {
+            for diff in batch {
+                diff.apply(&mut state);
+            }
+            let snapshot = state.clone();
+            async move { summarize_direct_rooms(snapshot).await }
+        });
+        (initial, snapshots)
+    }
 }
 
 /// Builds a [`RoomSummary`] for every joined chat room in `rooms` (same
@@ -105,9 +144,35 @@ async fn summarize_rooms(rooms: Vector<Room>) -> Vec<RoomSummary> {
     summaries
 }
 
+/// Builds a [`RoomSummary`] for every joined DM room in `rooms` (same
+/// `Room::is_dm` filter as [`MatrixClient::direct_rooms`]). Same
+/// skip-on-error behavior as [`summarize_rooms`].
+async fn summarize_direct_rooms(rooms: Vector<Room>) -> Vec<RoomSummary> {
+    let mut summaries = Vec::new();
+    for room in rooms.iter() {
+        if room.state() != RoomState::Joined || !room.is_dm() {
+            continue;
+        }
+        match room.display_name().await {
+            Ok(display_name) => summaries.push(RoomSummary {
+                room_id: room.room_id().to_string(),
+                display_name: display_name.to_string(),
+            }),
+            Err(error) => {
+                tracing::warn!(
+                    room_id = %room.room_id(),
+                    %error,
+                    "failed to compute DM room display name, skipping"
+                );
+            }
+        }
+    }
+    summaries
+}
+
 #[cfg(test)]
 mod tests {
-    use matrix_sdk::ruma::{RoomVersionId, room_id};
+    use matrix_sdk::ruma::{RoomVersionId, room_id, user_id};
     use matrix_sdk::test_utils::mocks::MatrixMockServer;
     use matrix_sdk_test::JoinedRoomBuilder;
     use matrix_sdk_test::event_factory::EventFactory;
@@ -149,5 +214,46 @@ mod tests {
         let ids: Vec<_> = rooms.iter().map(|r| r.room_id.as_str()).collect();
 
         assert_eq!(ids, vec![plain_room_id.as_str()]);
+    }
+
+    // `direct_rooms` must only pick up rooms flagged via the `m.direct`
+    // account data (what `Room::is_dm` checks), not every joined room.
+    #[tokio::test]
+    async fn direct_rooms_includes_only_dm_flagged_rooms() {
+        let server = MatrixMockServer::new().await;
+        server.mock_room_state_encryption().plain().mount().await;
+
+        let client = test_client(&server).await;
+        let user_id = client.client.user_id().unwrap();
+        let factory = EventFactory::new();
+        let other_user = user_id!("@other:example.org");
+
+        let plain_room_id = room_id!("!plain:example.org");
+        let dm_room_id = room_id!("!dm:example.org");
+
+        server
+            .mock_sync()
+            .ok_and_run(&client.client, |builder| {
+                builder
+                    .add_joined_room(
+                        JoinedRoomBuilder::new(plain_room_id)
+                            .add_state_event(factory.create(user_id, RoomVersionId::V1)),
+                    )
+                    .add_joined_room(
+                        JoinedRoomBuilder::new(dm_room_id)
+                            .add_state_event(factory.create(user_id, RoomVersionId::V1)),
+                    )
+                    .add_global_account_data(
+                        factory
+                            .direct()
+                            .add_user(other_user.to_owned().into(), dm_room_id),
+                    );
+            })
+            .await;
+
+        let rooms = client.direct_rooms().await.unwrap();
+        let ids: Vec<_> = rooms.iter().map(|r| r.room_id.as_str()).collect();
+
+        assert_eq!(ids, vec![dm_room_id.as_str()]);
     }
 }

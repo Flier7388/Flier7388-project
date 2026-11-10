@@ -26,10 +26,16 @@ crate-type = ["rlib"]
 # name matrix-sdk 0.19.1 actually exposes — not the hoped-for "rustls-tls",
 # verified via the version-resolution error `cargo check` raised against
 # matrix-sdk's real feature list) — `deny.toml` bans `openssl-sys`
-# workspace-wide.
+# workspace-wide. `bundled-sqlite` (not plain `sqlite`): compiles SQLite
+# from source via `libsqlite3-sys/bundled` instead of linking the
+# system lib via pkg-config — the plain `sqlite` feature built fine on
+# Linux (Nix devShell has a system sqlite3) but failed Windows linking
+# with `LNK1181: cannot open input file 'sqlite3.lib'`, since Windows
+# has no equivalent system lib to find (found 2026-11-10, first real
+# Windows build attempt).
 matrix-sdk = { version = "0.19.1", default-features = false, features = [
     "rustls-aws-lc-rs",
-    "sqlite",
+    "bundled-sqlite",
     "e2e-encryption",
 ] }
 # Same release line as `matrix-sdk` above (released in lockstep from the
@@ -82,7 +88,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 # credentials, unlike `examples/sync_smoke_test.rs`.
 matrix-sdk = { version = "0.19.1", default-features = false, features = [
     "rustls-aws-lc-rs",
-    "sqlite",
+    "bundled-sqlite",
     "e2e-encryption",
     "testing",
 ] }

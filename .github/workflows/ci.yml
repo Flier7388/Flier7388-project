@@ -39,6 +39,30 @@ jobs:
       - name: cargo test
         run: cargo test --workspace --locked
 
+  flutter-windows-build:
+    name: flutter build windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.95.0
+      - uses: Swatinem/rust-cache@v2
+      # Pinned to the same Flutter version the project's Nix devShell
+      # resolves (`flutter --version` under `.#flutter`, checked
+      # 2026-11-09), so this build and local `flutter build linux`
+      # stay comparable.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.4"
+          channel: stable
+      - run: flutter pub get
+        working-directory: flutter
+      # `flutter build windows` drives Cargokit under the hood, which
+      # cross-compiles the `app_bridge` crate (crates/matrix-client's
+      # FFI surface) for the Windows target itself — no separate
+      # `cargo build --target x86_64-pc-windows-msvc` step needed.
+      - run: flutter build windows
+        working-directory: flutter
+
   deny:
     name: cargo deny check
     runs-on: ubuntu-latest
