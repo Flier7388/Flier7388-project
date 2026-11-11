@@ -74,6 +74,11 @@ impl MatrixClient {
             .get_room(&room_id)
             .ok_or_else(|| ClientError::RoomNotFound(room_id.to_string()))?;
         let timeline = room.timeline_builder().build().await?;
+        // Without this, the timeline only shows whatever's already in
+        // the local event cache from live sync — no backfill from the
+        // server on open, so a room with history not yet seen by this
+        // session showed only its single most recent message.
+        timeline.paginate_backwards(20).await?;
         Ok(RoomTimeline {
             timeline,
             cancel: CancellationToken::new(),

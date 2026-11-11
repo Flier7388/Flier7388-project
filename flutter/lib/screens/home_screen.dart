@@ -207,14 +207,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Stops the Rust-side push loop for whatever `_timeline` currently is,
-  // if any — without this, switching away from a quiet room leaks the
-  // native `Timeline` (and its background sync task) forever, since the
-  // Rust side only notices the Dart subscription was cancelled the next
-  // time it tries to push an update. Cancelling the Dart subscription
-  // alone isn't enough; call this too.
+  // if any, and disposes the underlying native `Timeline` — without the
+  // `.dispose()` call, switching away from a quiet room leaked the
+  // native `Timeline` (and its background sync task) until Dart's
+  // GC/FRB finalizer eventually got around to it, same class of leak as
+  // `MatrixClient` on logout (`main.dart`'s `_logout`). `stopTimeline`
+  // alone only cancels our own forwarding-stream wrapper, not the
+  // underlying object. Cancelling the Dart subscription alone isn't
+  // enough either; call this too.
   void _stopCurrentTimeline() {
     final timeline = _timeline;
-    if (timeline != null) stopTimeline(timeline: timeline);
+    if (timeline != null) {
+      stopTimeline(timeline: timeline);
+      timeline.dispose();
+    }
   }
 
   Future<void> _openRoom(RoomSummary room) async {

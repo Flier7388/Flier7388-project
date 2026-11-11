@@ -75,28 +75,16 @@ rather than claimed as done.
   Swap `.homeserver_url(homeserver_url)` for
   `.server_name_or_homeserver_url(homeserver_url)` in `build_client`
   (`crates/matrix-client/src/client.rs`) to fix it.
-- **Switching rooms gets stuck after the first switch.** Found
-  2026-11-10 during real Windows testing: pick a room, then pick a
-  different one (in Home or a space) — the view doesn't change. Works
-  once right after switching tabs/spaces, then sticks again. Same root
-  class as 2026-11-09's timeline-stream leak, not fully closed by that
-  fix: `home_screen.dart`'s `_openRoom`/`_selectSpace` replace `_timeline`
-  (a `RoomTimeline` FRB opaque object) without ever calling `.dispose()`
-  on the old one — only `stopTimeline()` runs, which cancels *our*
-  forwarding-stream wrapper, not the underlying native
-  `matrix-sdk-ui::Timeline` and its own background task. The old
-  `Timeline` leaks until Dart's GC/FRB finalizer eventually gets to it —
-  not deterministic, not immediate. Needs the same `.dispose()` fix
-  already applied to `MatrixClient` on logout (`main.dart`'s `_logout`,
-  2026-11-10) — call `_timeline?.dispose()` everywhere `_timeline` gets
-  replaced or discarded (`_openRoom`, `_selectSpace`, `dispose()`).
-- **Only the last message shows, not full room history.** Found
-  2026-11-10 — confirmed even in a quiet admin/bot room. Root cause:
-  `timeline.rs`'s `timeline_for` never calls `Timeline::
-  paginate_backwards` — the timeline only shows whatever's already in
-  the local event cache from live sync, no backfill from the server on
-  open. Fix: call `paginate_backwards` (a reasonable default batch, e.g.
-  20 events) when building the timeline, or behind a "load more" action.
+- ~~Switching rooms gets stuck after the first switch.~~ **Fixed
+  2026-11-11.** `_stopCurrentTimeline()` (`home_screen.dart`) now calls
+  `.dispose()` on the old `RoomTimeline` in addition to `stopTimeline()`
+  — covers all three call sites (`_openRoom`, `_selectSpace`,
+  `dispose()`) since they all route through it.
+- ~~Only the last message shows, not full room history.~~ **Fixed
+  2026-11-11.** `timeline_for` (`timeline.rs`) now calls
+  `Timeline::paginate_backwards(20)` right after building the timeline,
+  backfilling from the server instead of only showing whatever was
+  already in the local event cache.
 
 ## 0.0.1-alpha — done
 
