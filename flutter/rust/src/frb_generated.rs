@@ -1436,10 +1436,19 @@ impl SseDecode for crate::api::matrix::TimelineMessage {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_sender = <String>::sse_decode(deserializer);
         let mut var_body = <String>::sse_decode(deserializer);
+        let mut var_timestampMs = <u64>::sse_decode(deserializer);
         return crate::api::matrix::TimelineMessage {
             sender: var_sender,
             body: var_body,
+            timestamp_ms: var_timestampMs,
         };
+    }
+}
+
+impl SseDecode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u64::<NativeEndian>().unwrap()
     }
 }
 
@@ -1642,6 +1651,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::matrix::TimelineMessage {
         [
             self.sender.into_into_dart().into_dart(),
             self.body.into_into_dart().into_dart(),
+            self.timestamp_ms.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1862,6 +1872,14 @@ impl SseEncode for crate::api::matrix::TimelineMessage {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.sender, serializer);
         <String>::sse_encode(self.body, serializer);
+        <u64>::sse_encode(self.timestamp_ms, serializer);
+    }
+}
+
+impl SseEncode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u64::<NativeEndian>(self).unwrap();
     }
 }
 

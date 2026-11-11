@@ -275,10 +275,17 @@ class TimelineMessage {
   /// The message's plain-text body.
   final String body;
 
-  const TimelineMessage({required this.sender, required this.body});
+  /// When the event was sent, in milliseconds since the Unix epoch.
+  final BigInt timestampMs;
+
+  const TimelineMessage({
+    required this.sender,
+    required this.body,
+    required this.timestampMs,
+  });
 
   @override
-  int get hashCode => sender.hashCode ^ body.hashCode;
+  int get hashCode => sender.hashCode ^ body.hashCode ^ timestampMs.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -286,5 +293,6 @@ class TimelineMessage {
       other is TimelineMessage &&
           runtimeType == other.runtimeType &&
           sender == other.sender &&
-          body == other.body;
+          body == other.body &&
+          timestampMs == other.timestampMs;
 }

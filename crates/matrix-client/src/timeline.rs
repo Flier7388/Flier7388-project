@@ -27,6 +27,10 @@ pub struct TimelineMessage {
     /// The message's plain-text body, or a placeholder like "🔒 Unable
     /// to decrypt message (…)" if it couldn't be decrypted.
     pub body: String,
+    /// When the event was sent, in milliseconds since the Unix epoch
+    /// (the event's `origin_server_ts`) — flattened to a plain integer
+    /// since Dart has no use for `ruma`'s `MilliSecondsSinceUnixEpoch`.
+    pub timestamp_ms: u64,
 }
 
 /// One-line, human-readable reason a message couldn't be decrypted.
@@ -132,6 +136,7 @@ fn as_timeline_message(item: &matrix_sdk_ui::timeline::TimelineItem) -> Option<T
     Some(TimelineMessage {
         sender: event.sender().to_string(),
         body,
+        timestamp_ms: event.timestamp().0.into(),
     })
 }
 

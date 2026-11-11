@@ -49,13 +49,27 @@ class TimelineMessageRow extends StatelessWidget {
                 if (showHeader)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 1),
-                    child: Text(
-                      message.sender,
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          message.sender,
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _formatTime(message.timestampMs),
+                          style: const TextStyle(
+                            color: MatrixColors.onContainerFaint,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 Text(
@@ -73,4 +87,16 @@ class TimelineMessageRow extends StatelessWidget {
       ),
     );
   }
+}
+
+// Local time, "HH:MM" — same shape as design/script.js's own
+// `toLocaleTimeString(..., { hour: '2-digit', minute: '2-digit' })`,
+// done by hand rather than pulling in `intl` for two zero-padded ints.
+String _formatTime(BigInt timestampMs) {
+  final time = DateTime.fromMillisecondsSinceEpoch(
+    timestampMs.toInt(),
+  ).toLocal();
+  final hour = time.hour.toString().padLeft(2, '0');
+  final minute = time.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
 }

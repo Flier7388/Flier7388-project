@@ -133,6 +133,8 @@ pub struct TimelineMessage {
     pub sender: String,
     /// The message's plain-text body.
     pub body: String,
+    /// When the event was sent, in milliseconds since the Unix epoch.
+    pub timestamp_ms: u64,
 }
 
 impl From<matrix_client::TimelineMessage> for TimelineMessage {
@@ -140,6 +142,7 @@ impl From<matrix_client::TimelineMessage> for TimelineMessage {
         Self {
             sender: message.sender,
             body: message.body,
+            timestamp_ms: message.timestamp_ms,
         }
     }
 }
