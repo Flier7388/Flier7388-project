@@ -81,10 +81,26 @@ rather than claimed as done.
   — covers all three call sites (`_openRoom`, `_selectSpace`,
   `dispose()`) since they all route through it.
 - ~~Only the last message shows, not full room history.~~ **Fixed
-  2026-11-11.** `timeline_for` (`timeline.rs`) now calls
-  `Timeline::paginate_backwards(20)` right after building the timeline,
-  backfilling from the server instead of only showing whatever was
-  already in the local event cache.
+  2026-11-11, refined same day.** `timeline_for` (`timeline.rs`) calls
+  `Timeline::paginate_backwards` to backfill from the server instead of
+  only showing whatever was already in the local event cache. A single
+  batch of 20 raw events (first fix) wasn't enough — most of a batch is
+  often non-message events (state events, reactions) filtered out
+  before display, so real-world testing against `voidfun.net` still
+  showed far less history than other clients. Now loops up to 10 pages
+  of 50 events each, stopping early once `paginate_backwards` reports
+  hitting the start of the room.
+- ~~Rooms with a `room_type` (MSC3417 call/"voice chat" rooms, and a
+  room newly added to a space from another client) don't show up in a
+  space's room list, even after refresh.~~ **Fixed 2026-11-11.**
+  `space_rooms` (`space.rs`) filtered out every room with any
+  `room_type` set (`room.room_type.is_none()`) — meant to exclude only
+  nested subspaces (`room_type: Some(Space)`), but excluded MSC3417
+  call rooms too, since those also carry a `room_type`
+  (`Some(Call)`). Found 2026-11-11 testing against `voidfun.net`: a
+  voice-chat room was invisible in its space's room list no matter how
+  many times "refresh" was pressed. Narrowed the filter to exclude only
+  `Some(RoomType::Space)`.
 
 ## 0.0.1-alpha — done
 

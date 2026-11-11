@@ -10,6 +10,7 @@
 use futures_util::{Stream, StreamExt};
 use matrix_sdk::RoomState;
 use matrix_sdk::ruma::RoomId;
+use matrix_sdk::ruma::room::RoomType;
 use matrix_sdk_ui::spaces::SpaceRoom;
 use matrix_sdk_ui::spaces::room_list::SpaceRoomListPaginationState;
 use serde::Serialize;
@@ -104,7 +105,14 @@ impl MatrixClient {
             .rooms()
             .await
             .into_iter()
-            .filter(|room| room.room_type.is_none() && room.state == Some(RoomState::Joined))
+            // Excludes nested subspaces only — `room_type.is_none()` used to
+            // exclude every typed room, including MSC3417 call rooms
+            // ("voice chat" rooms/spaces), which have `room_type: Some(Call)`
+            // but are real chat rooms, not subspaces.
+            .filter(|room| {
+                !matches!(room.room_type, Some(RoomType::Space))
+                    && room.state == Some(RoomState::Joined)
+            })
             .map(|room| RoomSummary {
                 room_id: room.room_id.to_string(),
                 display_name: room.display_name,

@@ -52,6 +52,15 @@ fn utd_reason(cause: &UtdCause) -> &'static str {
     }
 }
 
+/// How many raw timeline events to request per backfill page when a
+/// timeline is first opened. See [`MAX_BACKFILL_PAGES`].
+const BACKFILL_PAGE_SIZE: u16 = 50;
+
+/// How many backfill pages to request on open before giving up — bounds
+/// the request count for a room with a very long history rather than
+/// paginating all the way back on every open.
+const MAX_BACKFILL_PAGES: usize = 10;
+
 /// A handle to one room's timeline: read recent messages, send new ones.
 pub struct RoomTimeline {
     timeline: Timeline,
@@ -77,8 +86,19 @@ impl MatrixClient {
         // Without this, the timeline only shows whatever's already in
         // the local event cache from live sync — no backfill from the
         // server on open, so a room with history not yet seen by this
-        // session showed only its single most recent message.
-        timeline.paginate_backwards(20).await?;
+        // session showed only its single most recent message. A single
+        // batch of 20 raw timeline events (state events, reactions, etc.
+        // included) often reduced to only one or two actual text
+        // messages after filtering, nowhere near "most of the history"
+        // other clients show on open — loop until either the start of
+        // the room's history is hit or a bounded number of events have
+        // been pulled in, rather than stopping after one shallow batch.
+        for _ in 0..MAX_BACKFILL_PAGES {
+            let hit_start = timeline.paginate_backwards(BACKFILL_PAGE_SIZE).await?;
+            if hit_start {
+                break;
+            }
+        }
         Ok(RoomTimeline {
             timeline,
             cancel: CancellationToken::new(),
