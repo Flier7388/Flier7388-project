@@ -25,8 +25,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _busy = true;
       _error = null;
     });
+    MatrixClient? client;
     try {
-      final client = await login(
+      client = await login(
         homeserverUrl: _homeserverController.text,
         username: _usernameController.text,
         password: _passwordController.text,
@@ -35,8 +36,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final session = await clientSession(client: client);
       if (session != null) await saveSession(session);
       widget.onLoggedIn(client);
+      client = null;
     } catch (e) {
-      setState(() => _error = e.toString());
+      // `client` is non-null here only if `login()` itself succeeded but
+      // a later step (reading the session, saving it to disk) threw —
+      // without disposing it, the native `MatrixClient` leaks, same bug
+      // class as the `RoomTimeline`/`MatrixClient` leaks fixed elsewhere
+      // in this app. Set to `null` right after a successful hand-off to
+      // `onLoggedIn` above so this can't double-dispose a client the
+      // parent now owns.
+      client?.dispose();
+      if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
