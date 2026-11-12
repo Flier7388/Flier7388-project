@@ -89,14 +89,26 @@ class TimelineMessageRow extends StatelessWidget {
   }
 }
 
-// Local time, "HH:MM" — same shape as design/script.js's own
-// `toLocaleTimeString(..., { hour: '2-digit', minute: '2-digit' })`,
-// done by hand rather than pulling in `intl` for two zero-padded ints.
+// Local time, scaled to how old the message is — same convention most
+// chat clients use: just the time for today, add the day/month once
+// it's not today, and the year too once it's not even this year. Done
+// by hand rather than pulling in `intl` for a handful of zero-padded
+// ints.
 String _formatTime(BigInt timestampMs) {
   final time = DateTime.fromMillisecondsSinceEpoch(
     timestampMs.toInt(),
   ).toLocal();
+  final now = DateTime.now();
   final hour = time.hour.toString().padLeft(2, '0');
   final minute = time.minute.toString().padLeft(2, '0');
-  return '$hour:$minute';
+  final hm = '$hour:$minute';
+
+  final isToday =
+      time.year == now.year && time.month == now.month && time.day == now.day;
+  if (isToday) return hm;
+
+  final day = time.day.toString().padLeft(2, '0');
+  final month = time.month.toString().padLeft(2, '0');
+  if (time.year == now.year) return '$day.$month $hm';
+  return '$day.$month.${time.year} $hm';
 }

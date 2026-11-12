@@ -133,17 +133,84 @@ class _Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    // Not a ListView.builder: a date divider needs to know about the
+    // previous message's day, which `itemBuilder`'s per-index callback
+    // can't cheaply track — same non-builder pattern RoomList already
+    // uses for its (similarly bounded) room list.
+    final children = <Widget>[];
+    DateTime? lastDay;
+    for (var i = 0; i < messages.length; i++) {
+      final message = messages[i];
+      final sentAt = DateTime.fromMillisecondsSinceEpoch(
+        message.timestampMs.toInt(),
+      ).toLocal();
+      final day = DateTime(sentAt.year, sentAt.month, sentAt.day);
+      final isNewDay = lastDay == null || day != lastDay;
+      if (isNewDay) {
+        children.add(_DateDivider(day: day));
+        lastDay = day;
+      }
+      // A day boundary always starts a fresh header, even for the same
+      // sender as the last message of the previous day.
+      final collapsed =
+          !isNewDay && i > 0 && messages[i - 1].sender == message.sender;
+      children.add(
+        TimelineMessageRow(message: message, showHeader: !collapsed),
+      );
+    }
+    return ListView(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      itemCount: messages.length,
-      itemBuilder: (context, index) {
-        final collapsed =
-            index > 0 && messages[index - 1].sender == messages[index].sender;
-        return TimelineMessageRow(
-          message: messages[index],
-          showHeader: !collapsed,
-        );
-      },
+      children: children,
+    );
+  }
+}
+
+// "Today"/"Yesterday"/"D Mon YYYY" — same manual-formatting approach as
+// timeline_message.dart's `_formatTime`, no `intl` dependency for this.
+class _DateDivider extends StatelessWidget {
+  const _DateDivider({required this.day});
+
+  final DateTime day;
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  String get _label {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (day == today) return 'Today';
+    if (day == yesterday) return 'Yesterday';
+    return '${day.day} ${_months[day.month - 1]} ${day.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Divider(height: 1, color: MatrixColors.bgContainerLine),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              _label,
+              style: const TextStyle(
+                color: MatrixColors.onContainerFaint,
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const Expanded(
+            child: Divider(height: 1, color: MatrixColors.bgContainerLine),
+          ),
+        ],
+      ),
     );
   }
 }
