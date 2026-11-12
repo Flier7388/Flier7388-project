@@ -61,20 +61,15 @@ rather than claimed as done.
 
 ## Known issues (not yet fixed)
 
-- **Login screen requires a full URL scheme.** Typing just a bare
-  domain (e.g. `matrix.org`) into the homeserver field fails to find
-  the server — only `https://matrix.org` works. Found 2026-11-10
-  during the first real Windows run. Root cause: `client.rs`'s
-  `build_client` calls `matrix_sdk::ClientBuilder::homeserver_url`,
-  which takes the string literally with no scheme-guessing or
-  `.well-known` discovery. The fix matrix-sdk already provides:
-  `ClientBuilder::server_name_or_homeserver_url` accepts either a bare
-  server name *or* a full URL, assumes HTTPS, and does
-  `.well-known/matrix/client` discovery for the bare-name case —
-  exactly what most Matrix clients (Element included) let you type.
-  Swap `.homeserver_url(homeserver_url)` for
-  `.server_name_or_homeserver_url(homeserver_url)` in `build_client`
-  (`crates/matrix-client/src/client.rs`) to fix it.
+- ~~Login screen requires a full URL scheme.~~ **Fixed 2026-11-12.**
+  Typing just a bare domain (e.g. `matrix.org`) into the homeserver
+  field used to fail to find the server — only `https://matrix.org`
+  worked. `build_client` (`client.rs`) now calls
+  `ClientBuilder::server_name_or_homeserver_url` instead of
+  `.homeserver_url`, which accepts either a bare server name or a full
+  URL, assumes HTTPS, and does `.well-known/matrix/client` discovery
+  for the bare-name case. Verified against `voidfun.net` with
+  `MATRIX_HOMESERVER=voidfun.net` (no scheme) via `sync_smoke_test`.
 - ~~Switching rooms gets stuck after the first switch.~~ **Fixed
   2026-11-11.** `_stopCurrentTimeline()` (`home_screen.dart`) now calls
   `.dispose()` on the old `RoomTimeline` in addition to `stopTimeline()`

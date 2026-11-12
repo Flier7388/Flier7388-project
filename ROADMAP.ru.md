@@ -65,21 +65,15 @@ Material-дефолтов, подключённый к живым данным) 
 
 ## Известные проблемы (пока не исправлены)
 
-- **Экран логина требует полную схему URL.** Если в поле homeserver
-  ввести просто домен (например, `matrix.org`) без схемы — сервер не
-  находится, работает только `https://matrix.org`. Найдено 2026-11-10
-  при первом реальном запуске на Windows. Причина: `client.rs`'s
-  `build_client` вызывает `matrix_sdk::ClientBuilder::homeserver_url`,
-  который берёт строку буквально, без угадывания схемы и без
-  `.well-known`-дискавери. Исправление уже есть готовое в самом
-  `matrix-sdk`: `ClientBuilder::server_name_or_homeserver_url`
-  принимает либо голое имя сервера, либо полный URL, предполагает
-  HTTPS и делает `.well-known/matrix/client`-дискавери для случая с
-  голым именем — именно так, как принято вводить в большинстве
-  Matrix-клиентов (включая Element). Нужно заменить
-  `.homeserver_url(homeserver_url)` на
-  `.server_name_or_homeserver_url(homeserver_url)` в `build_client`
-  (`crates/matrix-client/src/client.rs`).
+- ~~Экран логина требует полную схему URL.~~ **Исправлено 2026-11-12.**
+  Раньше если в поле homeserver ввести просто домен (например,
+  `matrix.org`) без схемы — сервер не находился, работало только
+  `https://matrix.org`. `build_client` (`client.rs`) теперь вызывает
+  `ClientBuilder::server_name_or_homeserver_url` вместо
+  `.homeserver_url` — он принимает либо голое имя сервера, либо полный
+  URL, предполагает HTTPS и делает `.well-known/matrix/client`-дискавери
+  для случая с голым именем. Проверено на `voidfun.net` —
+  `MATRIX_HOMESERVER=voidfun.net` (без схемы) через `sync_smoke_test`.
 - ~~Переключение комнат залипает после первого раза.~~ **Исправлено
   2026-11-11.** `_stopCurrentTimeline()` (`home_screen.dart`) теперь
   вызывает `.dispose()` на старом `RoomTimeline` в дополнение к

@@ -21,8 +21,14 @@ pub struct MatrixClient {
 }
 
 async fn build_client(homeserver_url: &str, store_path: &Path) -> Result<Client, ClientError> {
+    // `server_name_or_homeserver_url` (not `homeserver_url`) accepts
+    // either a bare server name or a full URL, assumes HTTPS, and does
+    // `.well-known/matrix/client` discovery for the bare-name case —
+    // without it, typing just a domain (e.g. `matrix.org`) into the
+    // login screen failed to find the server; only a full
+    // `https://matrix.org` worked.
     Ok(Client::builder()
-        .homeserver_url(homeserver_url)
+        .server_name_or_homeserver_url(homeserver_url)
         .sqlite_store(store_path, None)
         .build()
         .await?)
