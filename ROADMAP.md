@@ -85,6 +85,18 @@ rather than claimed as done.
   showed far less history than other clients. Now loops up to 10 pages
   of 50 events each, stopping early once `paginate_backwards` reports
   hitting the start of the room.
+- ~~Switching rooms in a space looked stuck again (regression from the
+  history-backfill fix above).~~ **Fixed 2026-11-12.** The backfill
+  loop ran synchronously inside `timeline_for`, blocking room-open on
+  up to 10 sequential network round-trips — a real repro against
+  `voidfun.net` showed a 41-message room's backfill taking *minutes*.
+  Every room switch in the UI waited on this, which looked identical
+  to the original "switching rooms gets stuck" bug. `timeline_for` now
+  returns as soon as the `Timeline` is built; the backfill loop runs
+  detached in a spawned task against a shared `Arc<Timeline>`, racing
+  the same `CancellationToken` `RoomTimeline::stop` already cancels on
+  room switch — so backfill for a room nobody's looking at anymore
+  stops promptly instead of continuing to hammer the server.
 - ~~Rooms with a `room_type` (MSC3417 call/"voice chat" rooms, and a
   room newly added to a space from another client) don't show up in a
   space's room list, even after refresh.~~ **Fixed 2026-11-11.**

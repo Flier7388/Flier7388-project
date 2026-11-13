@@ -1,5 +1,7 @@
 //! Per-room timeline: reading recent messages and sending new ones.
 
+use std::sync::Arc;
+
 use async_stream::stream;
 use futures_util::{Stream, StreamExt};
 use matrix_sdk::ruma::RoomId;
@@ -67,9 +69,12 @@ const MAX_BACKFILL_PAGES: usize = 10;
 
 /// A handle to one room's timeline: read recent messages, send new ones.
 pub struct RoomTimeline {
-    timeline: Timeline,
+    timeline: Arc<Timeline>,
     /// Lets [`RoomTimeline::stop`] interrupt a live
-    /// [`RoomTimeline::subscribe_messages`] loop. See that method's doc
+    /// [`RoomTimeline::subscribe_messages`] loop, *and* the background
+    /// backfill task spawned in [`MatrixClient::timeline_for`] — both
+    /// race against this same token so neither outlives the room being
+    /// switched away from. See [`RoomTimeline::subscribe_messages`]'s doc
     /// comment for why this exists — without it, switching away from a
     /// quiet room leaks the `Timeline` and its background sync task.
     cancel: CancellationToken,
@@ -77,6 +82,16 @@ pub struct RoomTimeline {
 
 impl MatrixClient {
     /// Builds a timeline handle for the given room ID.
+    ///
+    /// Returns as soon as the timeline is built from whatever's already
+    /// in the local event cache — backfilling further history from the
+    /// server (see below) happens in a spawned background task instead
+    /// of blocking this call, so opening/switching rooms stays instant
+    /// even on a room with a lot of history. A single `paginate_backwards`
+    /// round-trip against a real server was found to take long enough
+    /// (real repro: a 41-message room took minutes to backfill over
+    /// several sequential pages) that doing this before returning made
+    /// every room switch in the UI look hung.
     pub async fn timeline_for(&self, room_id: &str) -> Result<RoomTimeline, ClientError> {
         let room_id = RoomId::parse(room_id).map_err(|source| ClientError::InvalidRoomId {
             room_id: room_id.to_owned(),
@@ -86,7 +101,9 @@ impl MatrixClient {
             .client
             .get_room(&room_id)
             .ok_or_else(|| ClientError::RoomNotFound(room_id.to_string()))?;
-        let timeline = room.timeline_builder().build().await?;
+        let timeline = Arc::new(room.timeline_builder().build().await?);
+        let cancel = CancellationToken::new();
+
         // Without this, the timeline only shows whatever's already in
         // the local event cache from live sync — no backfill from the
         // server on open, so a room with history not yet seen by this
@@ -97,16 +114,37 @@ impl MatrixClient {
         // other clients show on open — loop until either the start of
         // the room's history is hit or a bounded number of events have
         // been pulled in, rather than stopping after one shallow batch.
-        for _ in 0..MAX_BACKFILL_PAGES {
-            let hit_start = timeline.paginate_backwards(BACKFILL_PAGE_SIZE).await?;
-            if hit_start {
-                break;
+        // Runs detached: the live `subscribe_messages`/`messages` reads
+        // already observe new pages as they land on this same shared
+        // `Timeline`, and racing against `cancel` means switching away
+        // from the room (which cancels this same token — see
+        // `RoomTimeline::stop`) stops the backfill promptly instead of
+        // continuing to hammer the server for a room nobody's looking at
+        // anymore.
+        let backfill_timeline = Arc::clone(&timeline);
+        let backfill_cancel = cancel.clone();
+        tokio::spawn(async move {
+            for _ in 0..MAX_BACKFILL_PAGES {
+                let hit_start = tokio::select! {
+                    _ = backfill_cancel.cancelled() => return,
+                    result = backfill_timeline.paginate_backwards(BACKFILL_PAGE_SIZE) => {
+                        match result {
+                            Ok(hit_start) => hit_start,
+                            // Best-effort background work — the room is
+                            // already open and usable with whatever
+                            // history it has; a failed backfill page
+                            // isn't worth surfacing as an error.
+                            Err(_) => return,
+                        }
+                    }
+                };
+                if hit_start {
+                    break;
+                }
             }
-        }
-        Ok(RoomTimeline {
-            timeline,
-            cancel: CancellationToken::new(),
-        })
+        });
+
+        Ok(RoomTimeline { timeline, cancel })
     }
 }
 
